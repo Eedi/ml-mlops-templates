@@ -1,0 +1,75 @@
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      environment_config_file:
+        required: true
+        type: string
+      run_load_test:
+        required: true
+        type: boolean
+      load_test_config:
+        required: false
+        type: string
+        default: ''
+      endpoint_name:
+        required: true
+        type: string
+      deployment_name:
+        required: true
+        type: string
+      endpoint_config:
+        required: true
+        type: string
+      deployment_config:
+        required: true
+        type: string
+
+
+jobs:
+  get-config:
+      uses: Azure/mlops-templates/.github/workflows/read-yaml.yml@main
+      with:
+        file_name: ${{ inputs.environment_config_file }}
+
+  deploy:
+    needs: get-config
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      resource_group: ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }}
+      location: ${{ secrets.PROJECT_RESOURCE_GROUP_LOCATION }}
+      aml_workspace: mlw-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
+      keyvault_name: kv-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
+      app_insights_name: appi-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
+      load_test_resource: lt${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
+      slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      endpoint_name: ${{ inputs.endpoint_name }}
+      deployment_name: ${{ inputs.deployment_name }}
+      endpoint_config: ${{ inputs.endpoint_config }}
+      deployment_config: ${{ inputs.deployment_config }}
+      load_test_config: ${{ inputs.load_test_config }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2.5.0
+      - name: Az CLI Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      - name: Update endpoint
+        run: ./.github/scripts/create_or_update_endpoint.sh
+      - name: Update deployment
+        run: ./.github/scripts/deploy.sh
+      - name: Setup alerts
+        if: success()
+        run: ./.github/scripts/setup-alerts.sh
+      - name: Run load test
+        if: inputs.run_load_test
+        run: ./.github/scripts/create_load_test.sh
