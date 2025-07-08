@@ -4,7 +4,7 @@ set -e
 
 
 # Check if required environment variables are set
-if [[ -z "$aml_workspace" || -z "$resource_group" || -z "$mlops_path" || -z "$endpoint_name" || -z "$load_test_name" ]]; then
+if [[ -z "$aml_workspace" || -z "$resource_group" || -z "$load_test_config" || -z "$endpoint_name" || -z "$load_test_name" ]]; then
     echo "Error: Missing required environment variables."
     exit 1
 fi
@@ -52,7 +52,7 @@ else
       --name "$load_test_resource" \
       --resource-group "$resource_group" \
       --test-id "$test_id" \
-      --load-test-config-file "$mlops_path/configs/load_test.yml" \
+      --load-test-config-file "$load_test_config" \
       --env "ENDPOINT_URL=$uri" \
       --secret "API_KEY=$secret_url" \
       --output none
