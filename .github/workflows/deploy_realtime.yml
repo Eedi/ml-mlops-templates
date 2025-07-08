@@ -14,6 +14,9 @@ on:
         required: false
         type: string
         default: ''
+      load_test_name:
+        required: false
+        type: string
       endpoint_name:
         required: true
         type: string
@@ -54,6 +57,7 @@ jobs:
       endpoint_config: ${{ inputs.endpoint_config }}
       deployment_config: ${{ inputs.deployment_config }}
       load_test_config: ${{ inputs.load_test_config }}
+      load_test_name: ${{ inputs.load_test_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

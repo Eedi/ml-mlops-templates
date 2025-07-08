@@ -4,7 +4,7 @@ set -e
 
 
 # Check if required environment variables are set
-if [[ -z "$aml_workspace" || -z "$resource_group" || -z "$mlops_path" || -z "$endpoint_name" ]]; then
+if [[ -z "$aml_workspace" || -z "$resource_group" || -z "$mlops_path" || -z "$endpoint_name" || -z "$load_test_name" ]]; then
     echo "Error: Missing required environment variables."
     exit 1
 fi
@@ -14,7 +14,7 @@ az configure --defaults workspace="$aml_workspace" group="$resource_group"
 ## LOAD TEST CONFIGURATION ##
 
 # Define the load test configuration. If the locustfile changes then the test_id should change as well.
-test_id="lt-$endpoint_name-nbq-allcandidates_alltargets_10x"
+test_id="lt-$endpoint_name-$load_test_name"
 
 # Set the api key for the endpoint
 echo "🔑 Getting endpoint key..."
