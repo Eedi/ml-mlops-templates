@@ -25,7 +25,7 @@ on:
 
 jobs:
   get-config:
-      uses: Azure/mlops-templates/.github/workflows/read-yaml.yml@main
+      uses: Eedi/ml-mlops-templates/.github/workflows/read-yaml.yml@main
       with:
         file_name: ${{ inputs.environment_config_file }}
 
@@ -45,7 +45,15 @@ jobs:
       tags: ${{ inputs.tags }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2.5.0
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Debug ref
+        run: |
+          echo "Checked out ref: $(git rev-parse --abbrev-ref HEAD)"
+          git log -1
       - name: Az CLI Login
         uses: azure/login@v1
         with:
@@ -70,5 +78,11 @@ jobs:
       - name: Prune local Docker cache
         if: ${{ inputs.maximise_disk_space }}
         run: docker buildx prune --force
+      - name: Check out scripts
+        uses: actions/checkout@v4
+        with:
+          repository: Eedi/ml-mlops-templates
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: ml-mlops-templates
       - name: Update azure ml environment
-        run: ./.github/scripts/build_env.sh
+        run: ml-mlops-templates/.github/scripts/build_env.sh

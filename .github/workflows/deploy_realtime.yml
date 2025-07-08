@@ -56,20 +56,34 @@ jobs:
       load_test_config: ${{ inputs.load_test_config }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2.5.0
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Debug ref
+        run: |
+          echo "Checked out ref: $(git rev-parse --abbrev-ref HEAD)"
+          git log -1
       - name: Az CLI Login
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      - name: Check out scripts
+        uses: actions/checkout@v4
+        with:
+          repository: Eedi/ml-mlops-templates
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: ml-mlops-templates
       - name: Update endpoint
-        run: ./.github/scripts/create_or_update_endpoint.sh
+        run: ml-mlops-templates/.github/scripts/create_or_update_endpoint.sh
       - name: Update deployment
-        run: ./.github/scripts/deploy.sh
+        run: ml-mlops-templates/.github/scripts/deploy.sh
       - name: Setup alerts
         if: success()
-        run: ./.github/scripts/setup-alerts.sh
+        run: ml-mlops-templates/.github/scripts/setup-alerts.sh
       - name: Run load test
         if: inputs.run_load_test
-        run: ./.github/scripts/create_load_test.sh
+        run: ml-mlops-templates/.github/scripts/create_load_test.sh
