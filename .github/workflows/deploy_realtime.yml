@@ -7,6 +7,9 @@ on:
       environment_config_file:
         required: true
         type: string
+      deploy:
+        required: true
+        type: boolean
       run_load_test:
         required: true
         type: boolean
@@ -84,6 +87,7 @@ jobs:
       - name: Update endpoint
         run: ml-mlops-templates/.github/scripts/create_or_update_endpoint.sh
       - name: Update deployment
+        if: inputs.deploy
         run: ml-mlops-templates/.github/scripts/deploy.sh
       - name: Setup alerts
         if: success()
