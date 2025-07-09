@@ -48,11 +48,6 @@ else
     scoring_uri="${uri}/score"
 
 
-    # Log files in config directory
-    echo "Current working directory: $(pwd)"
-    echo "Listing contents of: $(dirname "$load_test_config")"
-    ls -l "$(dirname "$load_test_config")"
-
     echo "Creating load test $load_test_resource for endpoint: $endpoint_name"
     az load test create \
       --name "$load_test_resource" \
@@ -61,8 +56,7 @@ else
       --load-test-config-file "$load_test_config" \
       --env "ENDPOINT_URL=$uri" \
       --secret "API_KEY=$secret_url" \
-      --output none \
-      --debug
+      --output none
 fi
 
 
