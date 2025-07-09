@@ -85,7 +85,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
       - name: Update endpoint
+        if: inputs.deploy
         run: ml-mlops-templates/.github/scripts/create_or_update_endpoint.sh
+      - name: Create or update endpoint diagnostic settings
+        run: ml-mlops-templates/.github/scripts/create_or_update_diagnostic_settings.sh
       - name: Update deployment
         if: inputs.deploy
         run: ml-mlops-templates/.github/scripts/deploy.sh
