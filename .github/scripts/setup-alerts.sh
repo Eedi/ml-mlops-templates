@@ -44,13 +44,7 @@ for var in "${required_vars[@]}"; do
     fi
 done
 
-# =============================================================================
-# Set default values for optional variables
-# =============================================================================
-severity="${severity:-1}"
-check_frequency="${check_frequency:-5m}"
-window_size="${window_size:-15m}"
-error_threshold="${error_threshold:-10}"
+
 
 # =============================================================================
 # Configure Azure defaults
@@ -80,9 +74,11 @@ echo "ℹ️ Action Group ID: $action_group_id"
 
 
 # =============================================================================
-# Get the endpoint ID
+# Get the log analytics workspace ID
 # =============================================================================
 endpoint_id=$(az ml online-endpoint show -n $endpoint_name --query "id" -o tsv)
+app_insights_id=$(az ml workspace show --query "application_insights" -o tsv)
+log_analytics_workspace_id=$(az monitor app-insights component show --ids $app_insights_id --query "workspaceResourceId" -o tsv)
 
 # =============================================================================
 # Create or update Log Analytics query alert rule
@@ -129,17 +125,26 @@ fi
 echo "🚀 Creating Log Analytics query alert rule: $log_alert_name"
 
 
+# =============================================================================
 # Create the Log Analytics alert for non-200 Azure ML endpoint traffic
+# =============================================================================
+
+# Set default values for optional variables
+severity="${severity:-1}"
+check_frequency="${check_frequency:-5m}"
+window_size="${window_size:-15m}"
+error_threshold="${error_threshold:-10}"
+
 az monitor scheduled-query create \
     --name "$log_alert_name" \
     --resource-group $resource_group \
-    --scopes "$endpoint_id" \
-    --description "Alert on non-200 HTTP status codes from Azure ML endpoints (Endpoint: $endpoint_name)" \
+    --scopes "$log_analytics_workspace_id" \
+    --description "Alert on non-200 HTTP status codes from endpoint $endpoint_name" \
     --severity $severity \
     --evaluation-frequency $check_frequency \
     --window-size $window_size \
-    --condition-query "Non200ResponseCount=AmlOnlineEndpointTrafficLog | where ResponseCode != \"200\" | summarize Count = count()" \
-    --condition "total \"Non200ResponseCount\" > 5" \
+    --condition-query Non200Reponses="AmlOnlineEndpointTrafficLog | where ResponseCode != '200' and EndpointName == '$endpoint_name'" \
+    --condition "count 'Non200Reponses' > $error_threshold" \
     --action-groups $action_group_id \
     --custom-properties "CustomKey1=$endpoint_name" \
     --tags "team=data-science" "repo=ml-azua" "environment=$envname" \
