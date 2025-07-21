@@ -69,6 +69,10 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Debug envname
+        run: | 
+          echo "inputs.environment: ${{ inputs.environment }}"
+          echo "envname: ${{ env.envname }}"
       - name: Debug ref
         run: |
           echo "Checked out ref: $(git rev-parse --abbrev-ref HEAD)"
