@@ -36,7 +36,7 @@ export MSYS2_ARG_CONV_EXCL="*"
 # =============================================================================
 # Validate required environment variables
 # =============================================================================
-required_vars=("resource_group" "endpoint_name" "envname" "aml_workspace", "action_group_name")
+required_vars=("resource_group" "endpoint_name" "envname" "aml_workspace" "action_group_name")
 for var in "${required_vars[@]}"; do
     if [ -z "${!var}" ]; then
         echo "::error::Required environment variable '$var' is not set"
