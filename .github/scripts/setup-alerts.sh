@@ -208,7 +208,7 @@ echo "   - Action Group ID: $action_group_id"
 echo "   - Action Group Name: $action_group_name"
 
 # Create the Log Analytics alert for non-200 Azure ML endpoint traffic
-create_log_result=$(az monitor scheduled-query create \
+az monitor scheduled-query create \
     --name "$log_alert_name" \
     --resource-group $resource_group \
     --scopes "$aml_workspace_id" \
@@ -220,22 +220,8 @@ create_log_result=$(az monitor scheduled-query create \
     --condition "total \"Non200ResponseCount\" > 5" \
     --action-groups $action_group_id \
     --custom-properties "CustomKey1=$endpoint_name" \
-    --tags "team=data-science" "repo=ml-azua" "environment=$envname" 2>&1)
-
-if [ $? -eq 0 ]; then
-    echo "✅ Successfully created Log Analytics query alert rule: $log_alert_name"
-    echo "   - Alert will trigger when non-200 responses >= 5"
-    echo "   - Monitoring interval: $check_frequency"
-    echo "   - Evaluation window: $window_size"
-    echo "   - Query scope: Azure ML workspace traffic logs"
-else
-    echo "❌ Failed to create Log Analytics query alert rule"
-    echo "   - Error: $create_log_result"
-    echo "   - Alert Name: $log_alert_name"
-    echo "   - Resource Group: $resource_group"
-    echo "   - AML Workspace: $aml_workspace (ID: $aml_workspace_id)"
-    exit 1
-fi
+    --tags "team=data-science" "repo=ml-azua" "environment=$envname" \
+    --verbose
 
 
 echo "✅ Alert setup complete!"
