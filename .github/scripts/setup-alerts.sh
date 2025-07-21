@@ -107,13 +107,13 @@ echo "ℹ️ Log Analytics alert rule status: ${log_alert_status:-<not found>}"
 
 if [ -n "$log_alert_status" ]; then
     echo "ℹ️  Log Analytics alert rule already exists, updating it"
-    command = "az monitor scheduled-query update"
+    command="az monitor scheduled-query update"
 else
     echo "ℹ️  No existing Log Analytics alert rule found, proceeding with creation"
     command="az monitor scheduled-query create"
 fi
 
-command \
+$command \
     --name "$log_alert_name" \
     --resource-group $resource_group \
     --scopes "$log_analytics_workspace_id" \
