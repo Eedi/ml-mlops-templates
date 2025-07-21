@@ -13,7 +13,7 @@
 #   - slack_webhook_url: URL for Slack webhook notifications
 #   - resource_group: Azure resource group name
 #   - endpoint_name: Name of the Azure ML endpoint
-#   - environment: Environment name (dev/prod)
+#   - envname: Environment name (dev/prod)
 #   - aml_workspace: Azure ML workspace name
 #
 # Optional environment variables (with defaults):
@@ -36,7 +36,7 @@ export MSYS2_ARG_CONV_EXCL="*"
 # =============================================================================
 # Validate required environment variables
 # =============================================================================
-required_vars=("slack_webhook_url" "resource_group" "endpoint_name" "environment" "aml_workspace")
+required_vars=("slack_webhook_url" "resource_group" "endpoint_name" "envname" "aml_workspace")
 for var in "${required_vars[@]}"; do
     if [ -z "${!var}" ]; then
         echo "::error::Required environment variable '$var' is not set"
@@ -97,7 +97,7 @@ az monitor action-group create \
     --resource-group $resource_group \
     --short-name "slack" \
     --action webhook "slack-webhook" "$slack_webhook_url" usecommonalertschema \
-    --tags "team=data-science" "repo=ml-azua" "environment=$environment"
+    --tags "team=data-science" "repo=ml-azua" "environment=$envname"
 
 # Wait a moment for the action group to be fully created
 sleep 2
@@ -220,7 +220,7 @@ create_log_result=$(az monitor scheduled-query create \
     --condition "total \"Non200ResponseCount\" > 5" \
     --action-groups $action_group_id \
     --custom-properties "CustomKey1=$endpoint_name" \
-    --tags "team=data-science" "repo=ml-azua" "environment=$environment" 2>&1)
+    --tags "team=data-science" "repo=ml-azua" "environment=$envname" 2>&1)
 
 if [ $? -eq 0 ]; then
     echo "✅ Successfully created Log Analytics query alert rule: $log_alert_name"
