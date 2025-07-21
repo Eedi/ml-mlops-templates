@@ -83,6 +83,14 @@ log_analytics_workspace_id=$(az monitor app-insights component show --ids $app_i
 # =============================================================================
 # Create or update Log Analytics query alert rule
 # =============================================================================
+
+# Set default values for optional variables
+severity="${severity:-1}"
+check_frequency="${check_frequency:-5m}"
+window_size="${window_size:-15m}"
+error_threshold="${error_threshold:-10}"
+
+
 echo "🚀 Creating Log Analytics query alert rule: Non-200 response codes"
 
 log_alert_name="${endpoint_name}-non-200-alert"
@@ -98,44 +106,14 @@ log_alert_status=$(az monitor scheduled-query show \
 echo "ℹ️ Log Analytics alert rule status: ${log_alert_status:-<not found>}"
 
 if [ -n "$log_alert_status" ]; then
-    echo "🗑️  Deleting existing Log Analytics alert rule: $log_alert_name"
-    echo "   - Resource Group: $resource_group"
-    echo "   - Alert Name: $log_alert_name"
-    
-    delete_log_result=$(az monitor scheduled-query delete \
-        --name "$log_alert_name" \
-        --resource-group $resource_group \
-        --yes 2>&1)
-    delete_exit_code=$?
-    
-    if [ $delete_exit_code -eq 0 ]; then
-        echo "✅ Successfully deleted existing Log Analytics alert rule"
-    elif [[ "$delete_log_result" == *"not found"* ]] || [[ "$delete_log_result" == *"NotFound"* ]]; then
-        echo "ℹ️  Log Analytics alert rule not found (already deleted or never existed)"
-    else
-        echo "⚠️  Warning: Failed to delete existing Log Analytics alert rule"
-        echo "   - Error: $delete_log_result"
-        echo "   - Exit Code: $delete_exit_code"
-        echo "   - Continuing with creation..."
-    fi
+    echo "ℹ️  Log Analytics alert rule already exists, updating it"
+    command = "az monitor scheduled-query update"
 else
     echo "ℹ️  No existing Log Analytics alert rule found, proceeding with creation"
+    command="az monitor scheduled-query create"
 fi
 
-echo "🚀 Creating Log Analytics query alert rule: $log_alert_name"
-
-
-# =============================================================================
-# Create the Log Analytics alert for non-200 Azure ML endpoint traffic
-# =============================================================================
-
-# Set default values for optional variables
-severity="${severity:-1}"
-check_frequency="${check_frequency:-5m}"
-window_size="${window_size:-15m}"
-error_threshold="${error_threshold:-10}"
-
-az monitor scheduled-query create \
+command \
     --name "$log_alert_name" \
     --resource-group $resource_group \
     --scopes "$log_analytics_workspace_id" \
