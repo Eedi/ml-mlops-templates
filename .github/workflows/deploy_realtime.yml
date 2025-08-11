@@ -69,6 +69,10 @@ jobs:
       deployment_name: ${{ inputs.deployment_name }}
       endpoint_config: ${{ inputs.endpoint_config }}
       deployment_config: ${{ inputs.deployment_config }}
+      shadow_deployment_name: ${{ inputs.shadow_deployment_name }}
+      shadow_deployment_config: ${{ inputs.shadow_deployment_config }}
+      shadow_deployment_mirror_percentage: ${{ inputs.shadow_deployment_mirror_percentage }}
+      shadow_deployment_traffic_percentage: ${{ inputs.shadow_deployment_traffic_percentage }}
       load_test_config: ${{ inputs.load_test_config }}
       load_test_name: ${{ inputs.load_test_name }}
       envname: ${{ inputs.environment }}

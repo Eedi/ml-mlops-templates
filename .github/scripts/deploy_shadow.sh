@@ -12,14 +12,14 @@ fi
 # Decisioning whether to update/create a shadow deployment or update live traffic routing
 # We don't want to do both at the same time because the shadow deployment should be checked before sending traffic to it.
 if [ -n "$shadow_deployment_traffic_percentage" ] && [ -n "$deployment_name" ]; then
-    if [ -n "$shadow_deployment_config" ] || [ -n "$shadow_deploment_mirror_percentage" ]; then
+    if [ -n "$shadow_deployment_config" ] || [ -n "$shadow_deployment_mirror_percentage" ]; then
         echo "Cannot both update live traffic routing and create/update shadow deployment at the same time."
         exit 1
     fi
     create_or_update_shadow_deployment="false"
     update_live_traffic="true"
     primary_deployment_traffic_percentage=$((100-$shadow_deployment_traffic_percentage))
-elif [ -n "$shadow_deploment_mirror_percentage" ] && [ -n "$shadow_deployment_config" ]; then
+elif [ -n "$shadow_deployment_mirror_percentage" ] && [ -n "$shadow_deployment_config" ]; then
     echo "Creating/updating shadow deployment: $shadow_deployment_name"
     create_or_update_shadow_deployment="true"
     update_live_traffic="false"
@@ -45,7 +45,7 @@ if [ $update_live_traffic = "true" ]; then
     if [ "$shadow_deployment_status" = "Succeeded" ]; then
         echo "✅ Shadow deployment $shadow_deployment_name exists and is in 'Succeeded' state."
         # If successful shadow deployment exists we may update traffic routing
-        az ml online-endpoint update --name $endpoint_name --traffic "$shadow_deployment_name=$shadow_deployment_traffic_percentage deployment_name=primary_deployment_traffic_percentage"
+        az ml online-endpoint update --name $endpoint_name --traffic "${shadow_deployment_name}=${shadow_deployment_traffic_percentage} ${deployment_name}=${primary_deployment_traffic_percentage}"
     elif [ -n "$shadow_deployment_status" ]; then
         echo "⚠️ Shadow deployment deployment exists but is not in 'Succeeded' state."
         echo "Deleting shadow deployment: $shadow_deployment_name. To assign traffic to a shadow deployment, it must be in 'Succeeded' state."
@@ -67,8 +67,8 @@ elif [ $create_or_update_shadow_deployment = "true" ]; then
         echo "ℹ️ No existing shadow deployment found. Creating new shadow deployment: $shadow_deployment_name"
         az ml online-deployment create --endpoint_name $endpoint_name --name $shadow_deployment_name -f shadow_deployment_config
     fi
-    echo "🔄 Setting shadow deployment traffic to $shadow_deploment_mirror_percentage%"
-    az ml online-endpoint update --name $endpoint_name --mirror-traffic "$shadow_deployment_name=$shadow_deploment_mirror_percentage"
+    echo "🔄 Setting shadow deployment traffic to $shadow_deployment_mirror_percentage%"
+    az ml online-endpoint update --name $endpoint_name --mirror-traffic "${shadow_deployment_name}=${shadow_deployment_mirror_percentage}"
 else
     echo "No live traffic routing updates specified."
 fi
