@@ -38,7 +38,7 @@ on:
       shadow_deployment_config:
         required: false
         type: string
-      shadow_deploment_mirror_percentage:
+      shadow_deployment_mirror_percentage:
         required: false
         type: number
       shadow_deployment_traffic_percentage:
