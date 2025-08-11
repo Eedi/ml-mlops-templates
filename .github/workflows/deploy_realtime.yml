@@ -23,16 +23,27 @@ on:
       endpoint_name:
         required: true
         type: string
-      deployment_name:
+      endpoint_config:
         required: true
         type: string
-      endpoint_config:
+      deployment_name:
         required: true
         type: string
       deployment_config:
         required: true
         type: string
-
+      shadow_deployment_name:
+        required: false
+        type: string
+      shadow_deployment_config:
+        required: false
+        type: string
+      shadow_deploment_mirror_percentage:
+        required: false
+        type: number
+      shadow_deployment_traffic_percentage:
+        required: false
+        type: number
 
 jobs:
   get-config:
@@ -90,8 +101,13 @@ jobs:
         run: ml-mlops-templates/.github/scripts/create_or_update_endpoint.sh
       - name: Create or update endpoint diagnostic settings
         run: ml-mlops-templates/.github/scripts/create_or_update_diagnostic_settings.sh
-      - name: Update deployment
-        if: inputs.deploy
+      - name: Deploy shadow deployment
+        if: inputs.deploy && inputs.shadow_deployment_name
+        run: | 
+          echo "Doing shadow deployment instead of primary deployment."
+          ml-mlops-templates/.github/scripts/deploy_shadow.sh
+      - name: Update deployment # don't run if shadow deployment is defined
+        if: inputs.deploy && !inputs.shadow_deployment_name
         run: ml-mlops-templates/.github/scripts/deploy.sh
       - name: Setup alerts
         if: success()
