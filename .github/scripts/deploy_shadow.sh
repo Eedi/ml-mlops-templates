@@ -63,15 +63,15 @@ elif [ $create_or_update_shadow_deployment = "true" ]; then
     echo "Creating or updating shadow deployment: $shadow_deployment_name"
     if [ "$shadow_deployment_status" = "Succeeded" ]; then
         echo "✅ Shadow deployment $shadow_deployment_name exists and is in 'Succeeded' state. Updating it."
-        az ml online-deployment update --endpoint_name "$endpoint_name" --name "$shadow_deployment_name" -f $shadow_deployment_config
+        az ml online-deployment update --endpoint-name "$endpoint_name" --name "$shadow_deployment_name" -f $shadow_deployment_config
     elif [ -n "$shadow_deployment_status" ]; then
         echo "⚠️ Shadow deployment exists but is not in 'Succeeded' state. Deleting and recreating it."
         az ml online-deployment delete --name "$shadow_deployment_name" --endpoint "$endpoint_name" --yes
         echo "🚀 Creating new shadow deployment: $shadow_deployment_name"
-        az ml online-deployment create --endpoint_name "$endpoint_name" --name "$shadow_deployment_name" -f $shadow_deployment_config
+        az ml online-deployment create --endpoint-name "$endpoint_name" --name "$shadow_deployment_name" -f $shadow_deployment_config
     else
         echo "ℹ️ No existing shadow deployment found. Creating new shadow deployment: $shadow_deployment_name"
-        az ml online-deployment create --endpoint_name "$endpoint_name" --name "$shadow_deployment_name" -f $shadow_deployment_config
+        az ml online-deployment create --endpoint-name "$endpoint_name" --name "$shadow_deployment_name" -f $shadow_deployment_config
     fi
     echo "🔄 Setting shadow deployment traffic to $shadow_deployment_mirror_percentage%"
     az ml online-endpoint update --name "$endpoint_name" --mirror-traffic "${shadow_deployment_name}=${shadow_deployment_mirror_percentage}"
