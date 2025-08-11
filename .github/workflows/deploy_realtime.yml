@@ -100,9 +100,6 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
-      - name: Update endpoint
-        if: inputs.deploy
-        run: ml-mlops-templates/.github/scripts/create_or_update_endpoint.sh
       - name: Create or update endpoint diagnostic settings
         run: ml-mlops-templates/.github/scripts/create_or_update_diagnostic_settings.sh
       - name: Deploy shadow deployment
@@ -110,6 +107,9 @@ jobs:
         run: | 
           echo "Doing shadow deployment instead of primary deployment."
           ml-mlops-templates/.github/scripts/deploy_shadow.sh
+      - name: Update endpoint
+        if: inputs.deploy && !inputs.shadow_deployment_name
+        run: ml-mlops-templates/.github/scripts/create_or_update_endpoint.sh
       - name: Update deployment # don't run if shadow deployment is defined
         if: inputs.deploy && !inputs.shadow_deployment_name
         run: ml-mlops-templates/.github/scripts/deploy.sh

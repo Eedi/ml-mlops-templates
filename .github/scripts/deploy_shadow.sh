@@ -2,24 +2,30 @@
 
 set -e
 
+# Treat unset, empty, or zero (string or number) as "not set"
+is_set() {
+    local val="$1"
+    [[ -n "$val" && "$val" != "0" ]]
+}
+
 # Check if required environment variables are set
-if [[ -z "$endpoint_name" || -z "$deployment_name" || -z "$shadow_deployment_name" ]]; then
-    echo "Error: Missing required environment variables."
+if ! is_set "$endpoint_name" || ! is_set "$deployment_name" || ! is_set "$shadow_deployment_name"; then
+    echo "Error: Missing required environment variables: endpoint_name, deployment_name, shadow_deployment_name"
     exit 1
 fi
 
 
 # Decisioning whether to update/create a shadow deployment or update live traffic routing
 # We don't want to do both at the same time because the shadow deployment should be checked before sending traffic to it.
-if [ -n "$shadow_deployment_traffic_percentage" ] && [ -n "$deployment_name" ]; then
-    if [ -n "$shadow_deployment_config" ] || [ -n "$shadow_deployment_mirror_percentage" ]; then
+if is_set "$shadow_deployment_traffic_percentage" && is_set "$deployment_name"; then
+    if is_set "$shadow_deployment_config" || is_set "$shadow_deployment_mirror_percentage"; then
         echo "Cannot both update live traffic routing and create/update shadow deployment at the same time."
         exit 1
     fi
     create_or_update_shadow_deployment="false"
     update_live_traffic="true"
     primary_deployment_traffic_percentage=$((100-$shadow_deployment_traffic_percentage))
-elif [ -n "$shadow_deployment_mirror_percentage" ] && [ -n "$shadow_deployment_config" ]; then
+elif is_set "$shadow_deployment_mirror_percentage" && is_set "$shadow_deployment_config"; then
     echo "Creating/updating shadow deployment: $shadow_deployment_name"
     create_or_update_shadow_deployment="true"
     update_live_traffic="false"
