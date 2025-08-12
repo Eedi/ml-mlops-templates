@@ -4,7 +4,7 @@ set -e
 
 is_set() {
     local val="$1"
-    [[ -n "$val" && "$val" != "0" && "$val" != "false"]]
+    [[ -n "$val" && "$val" != "0" && "$val" != "false" ]]
 }
 
 ## Deployment checks
