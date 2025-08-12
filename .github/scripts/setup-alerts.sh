@@ -76,9 +76,7 @@ echo "ℹ️ Action Group ID: $action_group_id"
 # =============================================================================
 # Get the log analytics workspace ID
 # =============================================================================
-endpoint_id=$(az ml online-endpoint show -n $endpoint_name --query "id" -o tsv)
-app_insights_id=$(az ml workspace show --query "application_insights" -o tsv)
-log_analytics_workspace_id=$(az monitor app-insights component show --ids $app_insights_id --query "workspaceResourceId" -o tsv)
+
 
 # =============================================================================
 # Create or update Log Analytics query alert rule
@@ -110,13 +108,18 @@ if [ -n "$log_alert_status" ]; then
     command="az monitor scheduled-query update"
 else
     echo "ℹ️  No existing Log Analytics alert rule found, proceeding with creation"
-    command="az monitor scheduled-query create"
+    endpoint_id=$(az ml online-endpoint show -n $endpoint_name --query "id" -o tsv)
+    app_insights_id=$(az ml workspace show --query "application_insights" -o tsv)
+    log_analytics_workspace_id=$(az monitor app-insights component show --ids $app_insights_id --query "workspaceResourceId" -o tsv)
+
+    # --scopes can only be set at creation time. 
+    # The case where the endpoint name changes is not handled here.
+    command="az monitor scheduled-query create --scopes "$log_analytics_workspace_id""
 fi
 
 $command \
     --name "$log_alert_name" \
     --resource-group $resource_group \
-    --scopes "$log_analytics_workspace_id" \
     --description "Alert on non-200 HTTP status codes from endpoint $endpoint_name" \
     --severity $severity \
     --evaluation-frequency $check_frequency \
