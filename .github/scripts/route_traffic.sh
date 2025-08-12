@@ -22,8 +22,8 @@ if is_set "$green_deployment_name"; then
     if is_set "$green_traffic_percentage"; then
         traffic_config="${green_deployment_name}=${green_traffic_percentage}"
     fi
-    if is_set "$green_mirror_traffic_percentage"; then
-        mirror_traffic_config="${green_deployment_name}=${green_mirror_traffic_percentage}"
+    if is_set "$green_mirror_percentage"; then
+        mirror_traffic_config="${green_deployment_name}=${green_mirror_percentage}"
     fi
 fi
 
@@ -32,7 +32,7 @@ if is_set "$blue_deployment_name"; then
         traffic_config="${blue_deployment_name}=${blue_traffic_percentage} ${traffic_config}"
     fi
     if is_set "$blue_mirror_traffic_percentage"; then
-        mirror_traffic_config="${blue_deployment_name}=${blue_mirror_traffic_percentage}"
+        mirror_traffic_config="${blue_deployment_name}=${blue_mirror_percentage}"
     fi
 fi
 

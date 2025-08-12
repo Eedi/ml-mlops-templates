@@ -43,16 +43,16 @@ on:
       green_deployment_config:
         required: false
         type: string
-      blue_deployment_traffic_percentage:
+      blue_traffic_percentage:
         required: false
         type: number
-      green_deployment_traffic_percentage:
+      green_traffic_percentage:
         required: false
         type: number
-      blue_deployment_mirror_percentage:
+      blue_mirror_percentage:
         required: false
         type: number
-      green_deployment_mirror_percentage:
+      green_mirror_percentage:
         required: false
         type: number
 
@@ -77,13 +77,13 @@ jobs:
       app_insights_name: appi-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
       load_test_resource: lt${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
       endpoint_name: ${{ inputs.endpoint_name }}
-      # deployment_name: ${{ inputs.deployment_name }}
-      # endpoint_config: ${{ inputs.endpoint_config }}
-      # deployment_config: ${{ inputs.deployment_config }}
-      # shadow_deployment_name: ${{ inputs.shadow_deployment_name }}
-      # shadow_deployment_config: ${{ inputs.shadow_deployment_config }}
-      # shadow_deployment_mirror_percentage: ${{ inputs.shadow_deployment_mirror_percentage }}
-      # shadow_deployment_traffic_percentage: ${{ inputs.shadow_deployment_traffic_percentage }}
+      endpoint_config: ${{ inputs.endpoint_config }}
+      blue_deployment_name: ${{ inputs.blue_deployment_name }}
+      green_deployment_name: ${{ inputs.green_deployment_name }}
+      blue_traffic_percentage: ${{ inputs.blue_traffic_percentage }}
+      green_traffic_percentage: ${{ inputs.green_traffic_percentage }}
+      blue_mirror_percentage: ${{ inputs.blue_mirror_percentage }}
+      green_mirror_percentage: ${{ inputs.green_mirror_percentage }}
       load_test_config: ${{ inputs.load_test_config }}
       load_test_name: ${{ inputs.load_test_name }}
       envname: ${{ inputs.environment }}
@@ -106,7 +106,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
       - name: Check blue-green deployment logic
-        if: inputs.deploy_blue || inputs.deploy_green
         run: |
           ml-mlops-templates/.github/scripts/blue_green_logic_checks.sh
       - name: Az CLI Login
@@ -141,7 +140,6 @@ jobs:
             -w ${{ env.aml_workspace }} \
             -r ${{ env.resource_group }}
       - name: Route traffic
-        if: inputs.deploy_blue || inputs.deploy_green
         run: ml-mlops-templates/.github/scripts/route_traffic.sh
       - name: Setup alerts
         run: ml-mlops-templates/.github/scripts/setup-alerts.sh
