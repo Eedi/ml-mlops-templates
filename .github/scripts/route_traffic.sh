@@ -19,23 +19,22 @@ fi
 traffic_config=""
 
 if is_set "$green_deployment_name"; then
-    if is_set "$green_traffic_percentage"; then
-        traffic_config="${green_deployment_name}=${green_traffic_percentage}"
-    fi
+    traffic_config="${green_deployment_name}=${green_traffic_percentage}"
     if is_set "$green_mirror_percentage"; then
         mirror_traffic_config="${green_deployment_name}=${green_mirror_percentage}"
     fi
 fi
 
 if is_set "$blue_deployment_name"; then
-    if is_set "$blue_traffic_percentage"; then
-        traffic_config="${blue_deployment_name}=${blue_traffic_percentage} ${traffic_config}"
-    fi
-    if is_set "$blue_mirror_traffic_percentage"; then
+    traffic_config="${blue_deployment_name}=${blue_traffic_percentage} ${traffic_config}"
+    if is_set "$blue_mirror_percentage"; then
         mirror_traffic_config="${blue_deployment_name}=${blue_mirror_percentage}"
     fi
 fi
 
+# Remove leading/trailing whitespace
+traffic_config="$(echo "$traffic_config" | xargs)"
+mirror_traffic_config="$(echo "$mirror_traffic_config" | xargs)"
 
 
 
@@ -49,9 +48,10 @@ echo "ℹ️ Endpoint provisioning state: ${endpoint_status:-<not found>}"
 
 if [ "$endpoint_status" == "Succeeded" ]; then
   echo "✅ Updating existing endpoint: $endpoint_name"
-  az ml online-endpoint update -f $endpoint_config --name "$endpoint_name" --traffic "$traffic_config" --mirror-traffic "$mirror_traffic_config"
+  update_args=(-f "$endpoint_config" --name "$endpoint_name" --traffic "$traffic_config")
+  [ -n "$mirror_traffic_config" ] && update_args+=(--mirror-traffic "$mirror_traffic_config")
+  az ml online-endpoint update "${update_args[@]}"
 else
-  # fail if endpoint is not in succeeded state
   echo "❌ Endpoint $endpoint_name is not in 'Succeeded' state. Failing."
   exit 1
 fi
