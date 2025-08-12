@@ -2,6 +2,20 @@
 
 set -e
 
+# Read parameters
+while getopts "w:r:e:n:c:" flag
+do
+  case "${flag}" in
+    w) aml_workspace=${OPTARG};;
+    r) resource_group=${OPTARG};;
+    e) endpoint_name=${OPTARG};;
+    n) deployment_name=${OPTARG};;
+    c) deployment_config=${OPTARG};;
+  esac
+done
+
+
+
 echo "🔧 Setting defaults"
 az configure --defaults workspace="$aml_workspace" group="$resource_group"
 
@@ -17,8 +31,6 @@ echo "ℹ️ Deployment provisioning state: ${deployment_status:-<not found>}"
 if [ "$deployment_status" = "Succeeded" ]; then
   echo "✅ Updating existing deployment: $deployment_name"
   az ml online-deployment update -f $deployment_config --name "$deployment_name" --endpoint-name "$endpoint_name"
-  echo "🔄 Setting traffic to 100% for deployment: $deployment_name"
-  az ml online-endpoint update --name "$endpoint_name" --traffic "$deployment_name=100"
 else
   if [ -n "$deployment_status" ]; then
     echo "⚠️ Deployment exists but is not in 'Succeeded' state. Deleting it."
@@ -26,7 +38,7 @@ else
   fi
 
   echo "🚀 Creating deployment: $deployment_name"
-  az ml online-deployment create -f $deployment_config --name "$deployment_name" --endpoint-name "$endpoint_name" --all-traffic
+  az ml online-deployment create -f $deployment_config --name "$deployment_name" --endpoint-name "$endpoint_name"
 fi
 
 deploy_status=$(az ml online-deployment show \

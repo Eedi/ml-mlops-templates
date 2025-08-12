@@ -115,7 +115,7 @@ No, it causes an outage.
 No.
 
 #### How do load testing, logs, alerts work with shadow deployments?
-- Load testing should be done on dev, shadow deployment on prod.
+- Load testing is run against the endpoint. It will use whatever traffic routing is currently defined.
 - Alert rules are defined at the endpoint level.
 - Diagnostic settings (for logging) are defined at the endpoint level.
 

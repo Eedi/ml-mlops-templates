@@ -73,7 +73,7 @@ elif [ $create_or_update_shadow_deployment = "true" ]; then
         echo "ℹ️ No existing shadow deployment found. Creating new shadow deployment: $shadow_deployment_name"
         az ml online-deployment create --endpoint-name "$endpoint_name" --name "$shadow_deployment_name" -f $shadow_deployment_config
     fi
-    echo "🔄 Setting shadow deployment traffic to $shadow_deployment_mirror_percentage%"
+    echo "🔄 Mirroring $shadow_deployment_mirror_percentage% of traffic to shadow deployment"
     az ml online-endpoint update --name "$endpoint_name" --mirror-traffic "${shadow_deployment_name}=${shadow_deployment_mirror_percentage}"
 else
     echo "No live traffic routing updates specified."

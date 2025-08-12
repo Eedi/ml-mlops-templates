@@ -7,9 +7,6 @@ on:
       environment_config_file:
         required: true
         type: string
-      deploy:
-        required: true
-        type: boolean
       run_load_test:
         required: true
         type: boolean
@@ -26,22 +23,36 @@ on:
       endpoint_config:
         required: true
         type: string
-      deployment_name:
+      deploy_blue:
         required: true
-        type: string
-      deployment_config:
+        type: boolean
+        default: false
+      deploy_green:
         required: true
-        type: string
-      shadow_deployment_name:
+        type: boolean
+        default: false
+      blue_deployment_name:
         required: false
         type: string
-      shadow_deployment_config:
+      green_deployment_name:
         required: false
         type: string
-      shadow_deployment_mirror_percentage:
+      blue_deployment_config:
+        required: false
+        type: string
+      green_deployment_config:
+        required: false
+        type: string
+      blue_deployment_traffic_percentage:
         required: false
         type: number
-      shadow_deployment_traffic_percentage:
+      green_deployment_traffic_percentage:
+        required: false
+        type: number
+      blue_deployment_mirror_percentage:
+        required: false
+        type: number
+      green_deployment_mirror_percentage:
         required: false
         type: number
 
@@ -66,13 +77,13 @@ jobs:
       app_insights_name: appi-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
       load_test_resource: lt${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
       endpoint_name: ${{ inputs.endpoint_name }}
-      deployment_name: ${{ inputs.deployment_name }}
-      endpoint_config: ${{ inputs.endpoint_config }}
-      deployment_config: ${{ inputs.deployment_config }}
-      shadow_deployment_name: ${{ inputs.shadow_deployment_name }}
-      shadow_deployment_config: ${{ inputs.shadow_deployment_config }}
-      shadow_deployment_mirror_percentage: ${{ inputs.shadow_deployment_mirror_percentage }}
-      shadow_deployment_traffic_percentage: ${{ inputs.shadow_deployment_traffic_percentage }}
+      # deployment_name: ${{ inputs.deployment_name }}
+      # endpoint_config: ${{ inputs.endpoint_config }}
+      # deployment_config: ${{ inputs.deployment_config }}
+      # shadow_deployment_name: ${{ inputs.shadow_deployment_name }}
+      # shadow_deployment_config: ${{ inputs.shadow_deployment_config }}
+      # shadow_deployment_mirror_percentage: ${{ inputs.shadow_deployment_mirror_percentage }}
+      # shadow_deployment_traffic_percentage: ${{ inputs.shadow_deployment_traffic_percentage }}
       load_test_config: ${{ inputs.load_test_config }}
       load_test_name: ${{ inputs.load_test_name }}
       envname: ${{ inputs.environment }}
@@ -88,33 +99,51 @@ jobs:
         run: |
           echo "Checked out ref: $(git rev-parse --abbrev-ref HEAD)"
           git log -1
-      - name: Az CLI Login
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.ARM_CLIENT_ID }}
-          tenant-id: ${{ secrets.ARM_TENANT_ID }}
-          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       - name: Check out scripts
         uses: actions/checkout@v4
         with:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
+      - name: Check blue-green deployment logic
+        if: inputs.deploy_blue || inputs.deploy_green
+        run: |
+          ml-mlops-templates/.github/scripts/blue_green_logic_checks.sh
+      - name: Az CLI Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      - name: Create endpoint
+        if: inputs.deploy_blue || inputs.deploy_green
+        run: ml-mlops-templates/.github/scripts/create_endpoint.sh
       - name: Create or update endpoint diagnostic settings
         run: ml-mlops-templates/.github/scripts/create_or_update_diagnostic_settings.sh
-      - name: Deploy shadow deployment
-        if: inputs.deploy && inputs.shadow_deployment_name
+      - name: Blue deployment
+        if: inputs.deploy_blue
         run: | 
-          echo "Doing shadow deployment instead of primary deployment."
-          ml-mlops-templates/.github/scripts/deploy_shadow.sh
-      - name: Update endpoint
-        if: inputs.deploy && !inputs.shadow_deployment_name
-        run: ml-mlops-templates/.github/scripts/create_or_update_endpoint.sh
-      - name: Update deployment # don't run if shadow deployment is defined
-        if: inputs.deploy && !inputs.shadow_deployment_name
-        run: ml-mlops-templates/.github/scripts/deploy.sh
+          echo "Doing blue deployment"
+          ml-mlops-templates/.github/scripts/deploy.sh \
+            -e ${{ inputs.endpoint_name }} \
+            -n ${{ inputs.blue_deployment_name }} \
+            -c ${{ inputs.blue_deployment_config }} \
+            -w ${{ env.aml_workspace }} \
+            -r ${{ env.resource_group }}
+      - name: Green deployment
+        if: inputs.deploy_green
+        run: |
+          echo "Doing green deployment"
+          ml-mlops-templates/.github/scripts/deploy.sh \
+            -e ${{ inputs.endpoint_name }} \
+            -n ${{ inputs.green_deployment_name }} \
+            -c ${{ inputs.green_deployment_config }} \
+            -w ${{ env.aml_workspace }} \
+            -r ${{ env.resource_group }}
+      - name: Route traffic
+        if: inputs.deploy_blue || inputs.deploy_green
+        run: ml-mlops-templates/.github/scripts/route_traffic.sh
       - name: Setup alerts
-        if: success()
         run: ml-mlops-templates/.github/scripts/setup-alerts.sh
       - name: Run load test
         if: inputs.run_load_test
