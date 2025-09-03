@@ -31,15 +31,15 @@ if is_set "$deploy_green" && is_set "$green_traffic_percentage" && is_set "$blue
     exit 1
 fi
 
-if is_set "$blue_deployment_name" && ! is_set "$blue_traffic_percentage" && ! is_set "$blue_mirror_percentage"; then
-    echo "Error: blue_traffic_percentage or blue_mirror_traffic_percentage must also be set to a non-zero value if a blue deployment is defined."
-    exit 1
-fi
+# if is_set "$blue_deployment_name" && ! is_set "$blue_traffic_percentage" && ! is_set "$blue_mirror_percentage"; then
+#     echo "Error: blue_traffic_percentage or blue_mirror_traffic_percentage must also be set to a non-zero value if a blue deployment is defined."
+#     exit 1
+# fi
 
-if is_set "$green_deployment_name" && ! is_set "$green_traffic_percentage" && ! is_set "$green_mirror_percentage"; then
-    echo "Error: green_traffic_percentage or green_mirror_traffic_percentage must also be set to a non-zero value if a green deployment is defined."
-    exit 1
-fi
+# if is_set "$green_deployment_name" && ! is_set "$green_traffic_percentage" && ! is_set "$green_mirror_percentage"; then
+#     echo "Error: green_traffic_percentage or green_mirror_traffic_percentage must also be set to a non-zero value if a green deployment is defined."
+#     exit 1
+# fi
 
 ## Mirror traffic checks
 if is_set "$blue_mirror_traffic_percentage" && is_set "$green_mirror_traffic_percentage"; then
