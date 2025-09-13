@@ -4,7 +4,7 @@ set -e
 
 is_set() {
     local val="$1"
-    [[ -n "$val" && "$val" ]]
+    [[ -n "$val" && "$val" -ne 0 ]]
 }
 
 echo "🔧 Setting defaults"
