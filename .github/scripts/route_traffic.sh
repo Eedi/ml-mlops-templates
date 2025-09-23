@@ -2,32 +2,35 @@
 
 set -e
 
-is_set() {
-    local val="$1"
-    [[ -n "$val" && "$val" -ne 0 ]]
+is_set_string() {
+    [[ -n "$1" ]]
+}
+
+is_set_number() {
+    [[ -n "$1" && "$1" -ne 0 ]]
 }
 
 echo "🔧 Setting defaults"
 az configure --defaults workspace="$aml_workspace" group="$resource_group"
 
 
-if ! is_set "$green_deployment_name" && ! is_set "$blue_deployment_name"; then
+if ! is_set_string "$green_deployment_name" && ! is_set_string "$blue_deployment_name"; then
     echo "Error: At least one deployment name must be defined."
     exit 1
 fi
 
 traffic_config=""
 
-if is_set "$green_deployment_name"; then
+if is_set_string "$green_deployment_name"; then
     traffic_config="${green_deployment_name}=${green_traffic_percentage}"
-    if is_set "$green_mirror_percentage"; then
+    if is_set_number "$green_mirror_percentage"; then
         mirror_traffic_config="${green_deployment_name}=${green_mirror_percentage}"
     fi
 fi
 
-if is_set "$blue_deployment_name"; then
+if is_set_string "$blue_deployment_name"; then
     traffic_config="${blue_deployment_name}=${blue_traffic_percentage} ${traffic_config}"
-    if is_set "$blue_mirror_percentage"; then
+    if is_set_number "$blue_mirror_percentage"; then
         mirror_traffic_config="${blue_deployment_name}=${blue_mirror_percentage}"
     fi
 fi
