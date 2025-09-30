@@ -21,6 +21,12 @@ if [ "$traffic_percentage_sum" -ne 100 ]; then
     exit 1
 fi
 
+## One deployment must handle all live traffic (logging breaks if not since we don't know which responses are the live ones)
+if is_set "$blue_traffic_percentage" && is_set "$green_traffic_percentage"; then
+    echo "Error: Only one deployment can handle live traffic at a time."
+    exit 1
+fi
+
 if is_set "$deploy_blue" && is_set "$blue_traffic_percentage" && is_set "$green_deployment_name"; then
     echo "Error: If making a new blue deployment, do not send live traffic to it."
     exit 1

@@ -128,7 +128,8 @@ jobs:
             -n ${{ inputs.blue_deployment_name }} \
             -c ${{ inputs.blue_deployment_config }} \
             -w ${{ env.aml_workspace }} \
-            -r ${{ env.resource_group }}
+            -r ${{ env.resource_group }} \
+            -t ${{ inputs.blue_traffic_percentage }}
       - name: Green deployment
         if: inputs.deploy_green
         run: |
@@ -138,7 +139,8 @@ jobs:
             -n ${{ inputs.green_deployment_name }} \
             -c ${{ inputs.green_deployment_config }} \
             -w ${{ env.aml_workspace }} \
-            -r ${{ env.resource_group }}
+            -r ${{ env.resource_group }} \
+            -t ${{ inputs.green_traffic_percentage }}
       - name: Route traffic
         run: ml-mlops-templates/.github/scripts/route_traffic.sh
       - name: Setup alerts
