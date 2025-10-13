@@ -90,7 +90,7 @@ jobs:
       action_group_name: ag-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}-${{ needs.get-config.outputs.environment }}
     steps:
       - name: Set variables
-      - id: variables
+        id: variables
         run: |
           storage_account="st${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}"
           storage_account="${storage_account//-/}" # remove dashes
