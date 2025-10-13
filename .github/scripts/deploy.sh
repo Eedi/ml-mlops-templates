@@ -12,6 +12,7 @@ do
     n) deployment_name=${OPTARG};;
     c) deployment_config=${OPTARG};;
     t) traffic_percentage=${OPTARG};;
+    s) storage_account=${OPTARG};;
   esac
 done
 
@@ -23,8 +24,9 @@ az configure --defaults workspace="$aml_workspace" group="$resource_group"
 # Command to set environment variables. ENDPOINT_NAME and IS_LIVE if traffic_percentage > 0
 deployment_env_vars="\
 --set environment_variables.TRAFFIC_TYPE="$( [ "$traffic_percentage" -gt 0 ] && echo live || echo shadow )" \
---set environment_variables.ENDPOINT_NAME=\"$endpoint_name\""
-
+--set environment_variables.ENDPOINT_NAME=\"$endpoint_name\" \
+--set environment_variables.LOGGING_MODE=\"remote\" \
+--set environment_variables.AZURE_STORAGE_ACCOUNT_NAME=\"${storage_account}\""
 
 
 echo "🔍 Checking if deployment exists..."

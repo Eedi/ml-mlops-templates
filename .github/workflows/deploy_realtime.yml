@@ -73,6 +73,7 @@ jobs:
       resource_group: ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }}
       location: ${{ secrets.PROJECT_RESOURCE_GROUP_LOCATION }}
       aml_workspace: mlw-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
+      storage_account: st${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }} | tr -d '-'
       keyvault_name: kv-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
       app_insights_name: appi-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
       load_test_resource: lt${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
@@ -129,7 +130,8 @@ jobs:
             -c ${{ inputs.blue_deployment_config }} \
             -w ${{ env.aml_workspace }} \
             -r ${{ env.resource_group }} \
-            -t ${{ inputs.blue_traffic_percentage }}
+            -t ${{ inputs.blue_traffic_percentage }} \
+            -s ${{ env.storage_account }}
       - name: Green deployment
         if: inputs.deploy_green
         run: |
@@ -140,7 +142,8 @@ jobs:
             -c ${{ inputs.green_deployment_config }} \
             -w ${{ env.aml_workspace }} \
             -r ${{ env.resource_group }} \
-            -t ${{ inputs.green_traffic_percentage }}
+            -t ${{ inputs.green_traffic_percentage }} \
+            -s ${{ env.storage_account }}
       - name: Route traffic
         run: ml-mlops-templates/.github/scripts/route_traffic.sh
       - name: Setup alerts
