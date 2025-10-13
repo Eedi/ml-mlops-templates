@@ -90,6 +90,11 @@ jobs:
       envname: ${{ inputs.environment }}
       action_group_name: ag-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}-${{ needs.get-config.outputs.environment }}
     steps:
+      - name: variables
+        run: |
+          storage_account="st${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}"
+          storage_account="${storage_account//-/}" # remove dashes
+          echo "storage_account=$storage_account" >> $GITHUB_OUTPUT
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -131,7 +136,7 @@ jobs:
             -w ${{ env.aml_workspace }} \
             -r ${{ env.resource_group }} \
             -t ${{ inputs.blue_traffic_percentage }} \
-            -s ${{ env.storage_account }}
+            -s ${{ steps.variables.outputs.storage_account }}
       - name: Green deployment
         if: inputs.deploy_green
         run: |
@@ -143,7 +148,7 @@ jobs:
             -w ${{ env.aml_workspace }} \
             -r ${{ env.resource_group }} \
             -t ${{ inputs.green_traffic_percentage }} \
-            -s ${{ env.storage_account }}
+            -s ${{ steps.variables.outputs.storage_account }}
       - name: Route traffic
         run: ml-mlops-templates/.github/scripts/route_traffic.sh
       - name: Setup alerts
