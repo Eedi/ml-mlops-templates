@@ -73,7 +73,7 @@ jobs:
       resource_group: ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }}
       location: ${{ secrets.PROJECT_RESOURCE_GROUP_LOCATION }}
       aml_workspace: mlw-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
-      storage_account: st${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }} | tr -d '-'
+      storage_account: ${{ replace(format('st{0}{1}{2}', needs.get-config.outputs.namespace, needs.get-config.outputs.postfix, needs.get-config.outputs.environment), '-', '') }}
       keyvault_name: kv-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
       app_insights_name: appi-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
       load_test_resource: lt${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}

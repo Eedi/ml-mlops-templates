@@ -3,7 +3,7 @@
 set -e
 
 # Read parameters
-while getopts "w:r:e:n:c:t:" flag
+while getopts "w:r:e:n:c:t:s:" flag
 do
   case "${flag}" in
     w) aml_workspace=${OPTARG};;
