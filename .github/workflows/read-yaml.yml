@@ -31,6 +31,21 @@ on:
       aml_workspace:
         description: "The aml_workspace to use"
         value: ${{ jobs.read-yaml.outputs.aml_workspace }}
+      storage_account:
+        description: "The storage account"
+        value: ${{ jobs.read-yaml.outputs.storage_account }}
+      key_vault:
+        description: "The key vault"
+        value: ${{ jobs.read-yaml.outputs.key_vault }}
+      app_insights:
+        description: "The application insights"
+        value: ${{ jobs.read-yaml.outputs.app_insights }}
+      load_test_resource:
+        description: "The load test resource"
+        value: ${{ jobs.read-yaml.outputs.load_test_resource }}
+      action_group_name:
+        description: "The action group name for alerts"
+        value: ${{ jobs.read-yaml.outputs.action_group_name }}
       bep:
         description: "The batch endpoint"
         value: ${{ jobs.read-yaml.outputs.bep }}
