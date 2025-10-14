@@ -107,4 +107,10 @@ jobs:
         id: read_action_js
         with:
           config: ${{ github.workspace }}/${{ inputs.file_name }}
+      - name: Echo outputs
+        run: |
+          echo "AML Workspace: ${{ steps.read_action_js.outputs.aml_workspace }}"
+          echo "Storage Account: ${{ steps.read_action_js.outputs.storage_account }}"
+          echo "BEP: ${{ steps.read_action_js.outputs.bep }}"
+
 
