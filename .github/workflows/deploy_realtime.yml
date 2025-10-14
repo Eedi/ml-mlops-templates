@@ -58,7 +58,7 @@ on:
 
 jobs:
   get-config:
-      uses: Azure/mlops-templates/.github/workflows/read-yaml.yml@main
+      uses: Eedi/ml-mlops-templates/.github/workflows/read-yaml.yml@main
       with:
         file_name: ${{ inputs.environment_config_file }}
 
