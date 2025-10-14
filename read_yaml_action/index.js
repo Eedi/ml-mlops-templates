@@ -80,6 +80,11 @@ try {
     core.setOutput("enable_aml_computecluster",enable_aml_computecluster);
     core.setOutput("resource_group",resource_group);
     core.setOutput("aml_workspace", aml_workspace);
+    core.setOutput("storage_account", storage_account);
+    core.setOutput("key_vault", key_vault);
+    core.setOutput("app_insights", app_insights);
+    core.setOutput("load_test_resource", load_test_resource);
+    core.setOutput("action_group_name", action_group_name);
     core.setOutput("bep", batch_endpoint_name);
     core.setOutput("oep", online_endpoint_name);
     core.setOutput("terraform_version", terraform_version);
