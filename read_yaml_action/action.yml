@@ -22,6 +22,16 @@ outputs:
     description: 'The resource group the AML workspace is in'
   aml_workspace:
     description: 'The AML workspace'
+  storage_account:
+    description: 'The ml workspace storage account name'
+  key_vault:
+    description: 'The key vault name'
+  app_insights:
+    description: 'The application insights name'
+  load_test_resource:
+    description: 'The load test resource name'
+  action_group_name:
+    description: 'The action group name for alerts'
   bep:
     description: 'The batch endpoint name'
   oep:

@@ -72,10 +72,11 @@ jobs:
     env:
       resource_group: ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }}
       location: ${{ secrets.PROJECT_RESOURCE_GROUP_LOCATION }}
-      aml_workspace: mlw-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
-      keyvault_name: kv-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
-      app_insights_name: appi-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
-      load_test_resource: lt${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
+      aml_workspace: ${{ needs.get-config.outputs.aml_workspace }}
+      keyvault_name: ${{ needs.get-config.outputs.key_vault }}
+      app_insights_name: ${{ needs.get-config.outputs.app_insights }}
+      load_test_resource: ${{ needs.get-config.outputs.load_test_resource }}
+      action_group_name: ${{ needs.get-config.outputs.action_group_name }}
       endpoint_name: ${{ inputs.endpoint_name }}
       endpoint_config: ${{ inputs.endpoint_config }}
       blue_deployment_name: ${{ inputs.blue_deployment_name }}
@@ -87,14 +88,7 @@ jobs:
       load_test_config: ${{ inputs.load_test_config }}
       load_test_name: ${{ inputs.load_test_name }}
       envname: ${{ inputs.environment }}
-      action_group_name: ag-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}-${{ needs.get-config.outputs.environment }}
     steps:
-      - name: Set variables
-        id: variables
-        run: |
-          storage_account="st${{ needs.get-config.outputs.namespace }}${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}"
-          storage_account="${storage_account//-/}" # remove dashes
-          echo "storage_account=$storage_account" >> $GITHUB_OUTPUT
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -133,10 +127,10 @@ jobs:
             -e ${{ inputs.endpoint_name }} \
             -n ${{ inputs.blue_deployment_name }} \
             -c ${{ inputs.blue_deployment_config }} \
-            -w ${{ env.aml_workspace }} \
-            -r ${{ env.resource_group }} \
+            -w ${{ needs.get-config.outputs.aml_workspace }} \
+            -r ${{ needs.get-config.outputs.resource_group }} \
             -t ${{ inputs.blue_traffic_percentage }} \
-            -s ${{ steps.variables.outputs.storage_account }}
+            -s ${{ needs.get-config.outputs.storage_account }}
       - name: Green deployment
         if: inputs.deploy_green
         run: |
@@ -145,10 +139,10 @@ jobs:
             -e ${{ inputs.endpoint_name }} \
             -n ${{ inputs.green_deployment_name }} \
             -c ${{ inputs.green_deployment_config }} \
-            -w ${{ env.aml_workspace }} \
-            -r ${{ env.resource_group }} \
+            -w ${{ needs.get-config.outputs.aml_workspace }} \
+            -r ${{ needs.get-config.outputs.resource_group }} \
             -t ${{ inputs.green_traffic_percentage }} \
-            -s ${{ steps.variables.outputs.storage_account }}
+            -s ${{ needs.get-config.outputs.storage_account }}
       - name: Route traffic
         run: ml-mlops-templates/.github/scripts/route_traffic.sh
       - name: Setup alerts
