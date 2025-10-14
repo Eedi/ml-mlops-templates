@@ -24,11 +24,6 @@ try {
     var resource_group = String(configYaml["variables"]["resource_group"]);
     var location = String(configYaml["variables"]["location"]);
     var aml_workspace = String(configYaml["variables"]["aml_workspace"]);
-    var storage_account = String(configYaml["variables"]["storage_account"]);
-    var key_vault = String(configYaml["variables"]["key_vault"]);
-    var app_insights = String(configYaml["variables"]["app_insights"]);
-    var load_test_resource = String(configYaml["variables"]["load_test_resource"]);
-    var action_group_name = String(configYaml["variables"]["action_group_name"]);
 
     var terraform_version = String(configYaml["variables"]["terraform_version"]);
     var terraform_workingdir = String(configYaml["variables"]["terraform_workingdir"]);
@@ -47,21 +42,6 @@ try {
     if(checkGenerateEntity(aml_workspace)){
         aml_workspace = "mlw-"+namespace+"-"+postfix+environment;
     }
-    if(checkGenerateEntity(storage_account)){
-        storage_account = "st"+namespace+postfix+environment;
-    }
-    if(checkGenerateEntity(key_vault)){
-        key_vault = "kv-"+namespace+"-"+postfix+environment;
-    }
-    if(checkGenerateEntity(app_insights)){
-        app_insights = "appi-"+namespace+"-"+postfix+environment;
-    }
-    if(checkGenerateEntity(load_test_resource)){
-        load_test_resource = "lt"+namespace+postfix+environment;
-    }
-    if(checkGenerateEntity(action_group_name)){
-        action_group_name = "ag-"+namespace+"-"+postfix+"-"+environment;
-    }
 
     if(checkGenerateEntity(terraform_st_resource_group)){
       terraform_st_resource_group = "rg-"+namespace+"-"+postfix+environment+"-tf";
@@ -72,6 +52,12 @@ try {
 
     const batch_endpoint_name = "bep-"+namespace+"-"+postfix+environment;
     const online_endpoint_name = "oep-"+namespace+"-"+postfix+environment;
+    const storage_account = "st"+namespace+postfix+environment;
+    const key_vault = "kv-"+namespace+"-"+postfix+environment;
+    const app_insights = "appi-"+namespace+"-"+postfix+environment;
+    const load_test_resource = "lt"+namespace+postfix+environment;
+    const action_group_name = "ag-"+namespace+"-"+postfix+"-"+environment;
+
     core.setOutput("location",location);
     core.setOutput("namespace",namespace);
     core.setOutput("postfix",postfix);
