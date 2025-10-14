@@ -24,10 +24,10 @@ az configure --defaults workspace="$aml_workspace" group="$resource_group"
 
 # Set variables for log storage
 traffic_type="$( [ "$traffic_percentage" -gt 0 ] && echo live || echo shadow )" # traffic type is used to direct logs of shadow traffic to a different queue/container
-endpoint_identity=`az ml online-endpoint show --name $endpoint_name --query "identity.principal_id" -o tsv 
-storage_account_id=`az storage account show --name $storage_account --query "id" -o tsv`
+endpoint_identity=$(az ml online-endpoint show --name $endpoint_name --query "identity.principal_id" -o tsv 2>/dev/null | sed 's/[[:space:]]//g' || true)
+storage_account_id=$(az storage account show --name $storage_account --query "id" -o tsv 2>/dev/null | sed 's/[[:space:]]//g' || true)
 queue_name="q-$(echo $endpoint_name | tr '[:upper:]' '[:lower:]')-$traffic_type"
-queue_id=$storage_account_id/queueServices/default/queues/$queue_name
+queue_id="${storage_account_id}/queueServices/default/queues/${queue_name}"
 container_name="blob-$queue_name"
 container_id=$storage_account_id/blobServices/default/containers/$container_name
 
