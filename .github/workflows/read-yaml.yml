@@ -70,6 +70,11 @@ jobs:
       enable_monitoring: ${{  steps.read_action_js.outputs.enable_monitoring }}
       resource_group: ${{  steps.read_action_js.outputs.resource_group }}
       aml_workspace: ${{  steps.read_action_js.outputs.aml_workspace }}
+      storage_account: ${{  steps.read_action_js.outputs.storage_account }}
+      key_vault: ${{  steps.read_action_js.outputs.key_vault }}
+      app_insights: ${{  steps.read_action_js.outputs.app_insights }}
+      load_test_resource: ${{  steps.read_action_js.outputs.load_test_resource }}
+      action_group_name: ${{  steps.read_action_js.outputs.action_group_name }}
       bep: ${{  steps.read_action_js.outputs.bep }}
       oep: ${{  steps.read_action_js.outputs.oep }}
       terraform_version: ${{  steps.read_action_js.outputs.terraform_version }}
@@ -87,5 +92,4 @@ jobs:
         id: read_action_js
         with:
           config: ${{ github.workspace }}/${{ inputs.file_name }}
-      - name: Echo step output
-        run: echo "${{  steps.read_action_js.outputs.resource_group }} ${{  steps.read_action_js.outputs.aml_workspace }}"; echo "${{  steps.read_action_js.outputs.bep }}  ${{  steps.read_action_js.outputs.oep }}"; echo "${{  steps.read_action_js.outputs.terraform_version }}  ${{  steps.read_action_js.outputs.terraform_workingdir }}"; echo "${{  steps.read_action_js.outputs.terraform_st_resource_group }}  ${{  steps.read_action_js.outputs.terraform_st_storage_account }} " echo "${{  steps.read_action_js.outputs.terraform_st_container_name }}  ${{  steps.read_action_js.outputs.terraform_st_key }} "
+
