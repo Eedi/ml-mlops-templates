@@ -21,10 +21,28 @@ done
 echo "🔧 Setting defaults"
 az configure --defaults workspace="$aml_workspace" group="$resource_group"
 
-# Command to set environment variables. ENDPOINT_NAME and IS_LIVE if traffic_percentage > 0
+
+# Set variables for log storage
+traffic_type="$( [ "$traffic_percentage" -gt 0 ] && echo live || echo shadow )" # traffic type is used to direct logs of shadow traffic to a different queue/container
+endpoint_identity=`az ml online-endpoint show --name $endpoint_name --query "identity.principal_id" -o tsv 
+storage_account_id=`az storage account show --name $storage_account --query "id" -o tsv`
+queue_name="q-$(echo $endpoint_name | tr '[:upper:]' '[:lower:]')-$traffic_type"
+queue_id=$storage_account_id/queueServices/default/queues/$queue_name
+container_name="blob-$queue_name"
+container_id=$storage_account_id/blobServices/default/containers/$container_name
+
+echo "🔍 Ensuring log storage resources exist..."
+az storage queue create --name $queue_name --account-name $storage_account
+az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Queue Data Contributor" --scope $queue_id
+az storage container create --name $container_name --account-name $storage_account
+az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope $container_id
+
+# Define environment variables for deployment
 deployment_env_vars="\
---set environment_variables.TRAFFIC_TYPE="$( [ "$traffic_percentage" -gt 0 ] && echo live || echo shadow )" \
+--set environment_variables.TRAFFIC_TYPE=$traffic_type \
 --set environment_variables.ENDPOINT_NAME=$endpoint_name \
+--set environment_variables.QUEUE_NAME=$queue_name \
+--set environment_variables.CONTAINER_NAME=$container_name \
 --set environment_variables.LOGGING_MODE=remote \
 --set environment_variables.AZURE_STORAGE_ACCOUNT_NAME=$storage_account"
 
