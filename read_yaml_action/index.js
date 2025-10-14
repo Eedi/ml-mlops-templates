@@ -50,9 +50,14 @@ try {
       terraform_st_storage_account = "st"+namespace+postfix+environment+"tf";
     }
 
+    
+    const safe_namespace = namespace.replace(/-/g, '');
+    const safe_postfix = postfix.replace(/-/g, '');
+    const safe_environment = environment.replace(/-/g, '');
+
     const batch_endpoint_name = "bep-"+namespace+"-"+postfix+environment;
     const online_endpoint_name = "oep-"+namespace+"-"+postfix+environment;
-    const storage_account = "st"+namespace+postfix+environment;
+    const storage_account = "st"+safe_namespace+safe_postfix+safe_environment;
     const key_vault = "kv-"+namespace+"-"+postfix+environment;
     const app_insights = "appi-"+namespace+"-"+postfix+environment;
     const load_test_resource = "lt"+namespace+postfix+environment;

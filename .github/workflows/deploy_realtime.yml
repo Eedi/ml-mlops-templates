@@ -73,6 +73,7 @@ jobs:
       resource_group: ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }}
       location: ${{ secrets.PROJECT_RESOURCE_GROUP_LOCATION }}
       aml_workspace: ${{ needs.get-config.outputs.aml_workspace }}
+      storage_account: ${{ needs.get-config.outputs.storage_account }}
       keyvault_name: ${{ needs.get-config.outputs.key_vault }}
       app_insights_name: ${{ needs.get-config.outputs.app_insights }}
       load_test_resource: ${{ needs.get-config.outputs.load_test_resource }}
