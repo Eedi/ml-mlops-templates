@@ -21,18 +21,6 @@ done
 echo "🔧 Setting defaults"
 az configure --defaults workspace="$aml_workspace" group="$resource_group"
 
-#Debug checks
-echo "Access to workspace details"
-az ml workspace show
-
-echo "Access to endpoint details"
-az ml online-endpoint show --name $endpoint_name
-
-echo "Access to storage account details"
-az storage account show --name $storage_account
-
-echo "ℹ️ Endpoint identity: $endpoint_identity"
-echo "ℹ️ Storage account ID: $storage_account_id"
 
 # Set variables for log storage
 traffic_type="$( [ "$traffic_percentage" -gt 0 ] && echo live || echo shadow )" # traffic type is used to direct logs of shadow traffic to a different queue/container
@@ -40,13 +28,17 @@ endpoint_identity=$(az ml online-endpoint show --name $endpoint_name --query "id
 storage_account_id=$(az storage account show --name $storage_account --query "id" -o tsv 2>/dev/null | sed 's/[[:space:]]//g' || true)
 queue_name="q-$(echo $endpoint_name | tr '[:upper:]' '[:lower:]')-$traffic_type"
 queue_id="${storage_account_id}/queueServices/default/queues/${queue_name}"
-container_name="blob-$queue_name"
-container_id=$storage_account_id/blobServices/default/containers/$container_name
+staging_container_name="blob-$queue_name"
+container_id=$storage_account_id/blobServices/default/containers/$staging_container_name
 
 echo "🔍 Ensuring log storage resources exist..."
+echo "Creating queue"
 az storage queue create --name $queue_name --account-name $storage_account --auth-mode login
+echo "Assigning Storage Queue Data Contributor role to endpoint identity"
 az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Queue Data Contributor" --scope $queue_id
-az storage container create --name $container_name --account-name $storage_account --auth-mode login
+echo "Creating blob container"
+az storage container create --name $staging_container_name --account-name $storage_account --auth-mode login
+echo "Assigning Storage Blob Data Contributor role to endpoint identity"
 az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope $container_id
 
 # Define environment variables for deployment
@@ -54,7 +46,7 @@ deployment_env_vars="\
 --set environment_variables.TRAFFIC_TYPE=$traffic_type \
 --set environment_variables.ENDPOINT_NAME=$endpoint_name \
 --set environment_variables.QUEUE_NAME=$queue_name \
---set environment_variables.CONTAINER_NAME=$container_name \
+--set environment_variables.STAGING_CONTAINER_NAME=$staging_container_name \
 --set environment_variables.LOGGING_MODE=remote \
 --set environment_variables.AZURE_STORAGE_ACCOUNT_NAME=$storage_account"
 
