@@ -62,7 +62,23 @@ echo "ℹ️ Deployment provisioning state: ${deployment_status:-<not found>}"
 
 if [ "$deployment_status" = "Succeeded" ]; then
   echo "✅ Updating existing deployment: $deployment_name"
-  az ml online-deployment update -f $deployment_config --name "$deployment_name" --endpoint-name "$endpoint_name" $deployment_env_vars
+
+  # Copy base config
+  tmp_yaml=$(mktemp)
+  cp "$deployment_config" "$tmp_yaml"
+
+  # Append or replace environment variables in YAML
+  yq eval "
+    .environment_variables.TRAFFIC_TYPE = \"$traffic_type\" |
+    .environment_variables.ENDPOINT_NAME = \"$endpoint_name\" |
+    .environment_variables.QUEUE_NAME = \"$queue_name\" |
+    .environment_variables.STAGING_CONTAINER_NAME = \"$staging_container_name\" |
+    .environment_variables.LOGGING_MODE = \"remote\" |
+    .environment_variables.AZURE_STORAGE_ACCOUNT_NAME = \"$storage_account\"
+  " -i "$tmp_yaml"
+
+
+  az ml online-deployment update -f "$tmp_yaml" --name "$deployment_name" --endpoint-name "$endpoint_name"
 else
   if [ -n "$deployment_status" ]; then
     echo "⚠️ Deployment exists but is not in 'Succeeded' state. Deleting it."
