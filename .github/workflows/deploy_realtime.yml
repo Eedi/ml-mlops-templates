@@ -129,7 +129,7 @@ jobs:
             -n ${{ inputs.blue_deployment_name }} \
             -c ${{ inputs.blue_deployment_config }} \
             -w ${{ needs.get-config.outputs.aml_workspace }} \
-            -r ${{ needs.get-config.outputs.resource_group }} \
+            -r ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }} \
             -t ${{ inputs.blue_traffic_percentage }} \
             -s ${{ needs.get-config.outputs.storage_account }}
       - name: Green deployment
@@ -141,7 +141,7 @@ jobs:
             -n ${{ inputs.green_deployment_name }} \
             -c ${{ inputs.green_deployment_config }} \
             -w ${{ needs.get-config.outputs.aml_workspace }} \
-            -r ${{ needs.get-config.outputs.resource_group }} \
+            -r ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }} \
             -t ${{ inputs.green_traffic_percentage }} \
             -s ${{ needs.get-config.outputs.storage_account }}
       - name: Route traffic
