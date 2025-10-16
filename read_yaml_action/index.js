@@ -37,7 +37,7 @@ try {
       terraform_st_location = location;
     }
     if(checkGenerateEntity(resource_group)){
-        resource_group = "rg-"+namespace+"-"+postfix+environment;
+        resource_group = namespace+"-"+postfix+environment;
     }
     if(checkGenerateEntity(aml_workspace)){
         aml_workspace = "mlw-"+namespace+"-"+postfix+environment;
