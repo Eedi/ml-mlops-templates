@@ -32,9 +32,9 @@ container_name="blob-$queue_name"
 container_id=$storage_account_id/blobServices/default/containers/$container_name
 
 echo "🔍 Ensuring log storage resources exist..."
-az storage queue create --name $queue_name --account-name $storage_account
+az storage queue create --name $queue_name --account-name $storage_account --auth-mode login
 az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Queue Data Contributor" --scope $queue_id
-az storage container create --name $container_name --account-name $storage_account
+az storage container create --name $container_name --account-name $storage_account --auth-mode login
 az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope $container_id
 
 # Define environment variables for deployment
