@@ -20,5 +20,7 @@ elif [ -n "$endpoint_status" ]; then
     az ml online-endpoint delete --name "$endpoint_name" --yes
     echo "🚀 Re-creating"
     az ml online-endpoint create -f $endpoint_config --name "$endpoint_name"
+else
+  echo "❌ Endpoint $endpoint_name not found. Creating it."
+  az ml online-endpoint create -f "$endpoint_config" --name "$endpoint_name"
 fi
-
