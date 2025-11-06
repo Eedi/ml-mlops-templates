@@ -55,6 +55,18 @@ on:
       green_mirror_percentage:
         required: false
         type: number
+      consumer_cron:              
+        type: string
+        required: false
+        default: "0 * * * *"
+      consumer_max_messages:
+        type: string
+        required: false
+        default: "8000"
+      enable_schedule:
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   get-config:
@@ -89,6 +101,8 @@ jobs:
       load_test_config: ${{ inputs.load_test_config }}
       load_test_name: ${{ inputs.load_test_name }}
       envname: ${{ inputs.environment }}
+      consumer_cron: ${{ inputs.consumer_cron }}
+      consumer_max_messages: ${{ inputs.consumer_max_messages }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -122,7 +136,9 @@ jobs:
         run: ml-mlops-templates/.github/scripts/create_or_update_diagnostic_settings.sh
       - name: Blue deployment
         if: inputs.deploy_blue
-        run: | 
+        run: |
+          SFLAG=""
+          if [ "${{ inputs.enable_schedule }}" = "true" ]; then SFLAG="-S"; fi
           echo "Doing blue deployment"
           ml-mlops-templates/.github/scripts/deploy.sh \
             -e ${{ inputs.endpoint_name }} \
@@ -131,10 +147,13 @@ jobs:
             -w ${{ needs.get-config.outputs.aml_workspace }} \
             -r ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }} \
             -t ${{ inputs.blue_traffic_percentage }} \
-            -s ${{ needs.get-config.outputs.storage_account }}
+            -s ${{ needs.get-config.outputs.storage_account }} \
+            $SFLAG
       - name: Green deployment
         if: inputs.deploy_green
         run: |
+          SFLAG=""
+          if [ "${{ inputs.enable_schedule }}" = "true" ]; then SFLAG="-S"; fi        
           echo "Doing green deployment"
           ml-mlops-templates/.github/scripts/deploy.sh \
             -e ${{ inputs.endpoint_name }} \
@@ -143,7 +162,8 @@ jobs:
             -w ${{ needs.get-config.outputs.aml_workspace }} \
             -r ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }} \
             -t ${{ inputs.green_traffic_percentage }} \
-            -s ${{ needs.get-config.outputs.storage_account }}
+            -s ${{ needs.get-config.outputs.storage_account }} \
+            $SFLAG
       - name: Route traffic
         run: ml-mlops-templates/.github/scripts/route_traffic.sh
       - name: Setup alerts

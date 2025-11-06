@@ -3,7 +3,7 @@
 set -e
 
 # Read parameters
-while getopts "w:r:e:n:c:t:s:" flag
+while getopts "w:r:e:n:c:t:s:S" flag
 do
   case "${flag}" in
     w) aml_workspace=${OPTARG};;
@@ -13,6 +13,7 @@ do
     c) deployment_config=${OPTARG};;
     t) traffic_percentage=${OPTARG};;
     s) storage_account=${OPTARG};;
+    S) enable_schedule=1;;
   esac
 done
 
@@ -30,6 +31,11 @@ queue_name="q-$(echo $endpoint_name | tr '[:upper:]' '[:lower:]')-$traffic_type"
 queue_id="${storage_account_id}/queueServices/default/queues/${queue_name}"
 staging_container_name="blob-$queue_name"
 container_id=$storage_account_id/blobServices/default/containers/$staging_container_name
+ws_identity=$(az ml workspace show --name "$aml_workspace" --query "identity.principal_id" -o tsv | sed 's/[[:space:]]//g')
+consumer_max_messages="${consumer_max_messages:-8000}"
+consumer_cron="${consumer_cron:-0 * * * *}"  # hourly
+schedule_name="qc-$(echo "$endpoint_name" | tr '[:upper:]' '[:lower:]')-$traffic_type"
+enable_schedule="${enable_schedule:-0}"
 
 echo "🔍 Ensuring log storage resources exist..."
 echo "Creating queue"
@@ -40,6 +46,10 @@ echo "Creating blob container"
 az storage container create --name $staging_container_name --account-name $storage_account --auth-mode login
 echo "Assigning Storage Blob Data Contributor role to endpoint identity"
 az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope $container_id
+
+echo "Assigning roles to AML workspace identity"
+az role assignment create --assignee-object-id "$ws_identity" --assignee-principal-type ServicePrincipal --role "Storage Queue Data Contributor" --scope "$queue_id" || true
+az role assignment create --assignee-object-id "$ws_identity" --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor"  --scope "$container_id" || true
 
 # Define environment variables for deployment
 deployment_env_vars="\
@@ -99,6 +109,21 @@ echo "ℹ️ Final deployment status: $deploy_status"
 
 if [ "$deploy_status" = "Succeeded" ]; then
   echo "✅ Deployment completed successfully"
+  if [ "${enable_schedule}" = "1" ]; then
+    echo "📅 Scheduling enabled"
+    bash "$SCRIPT_DIR/schedule_consumer.sh" \
+      "${resource_group}" \
+      "${aml_workspace}" \
+      "${endpoint_name}" \
+      "${traffic_type}" \
+      "${storage_account}" \
+      "${queue_name}" \
+      "${staging_container_name}" \
+      "${schedule_name}"
+  else
+    echo "⏭️  Scheduling skipped (use -S to enable)"
+  fi
+
 else
   echo "❌ Deployment failed"
   exit 1
