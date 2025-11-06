@@ -11,42 +11,64 @@ WS="${2:?workspace required}"
 ENDPOINT="${3:?endpoint required}"
 TRAFFIC="${4:?traffic type required}"
 STORAGE="${5:?storage account required}"
+endpoint_lower="$(echo "${ENDPOINT}" | tr '[:upper:]' '[:lower:]')"
 QUEUE_NAME="${6:-q-${endpoint_lower}-${TRAFFIC}}"
-CONTAINER="${7:-blob-${Q}}"
+CONTAINER="${7:-blob-${QUEUE_NAME}}"
 SCHED="${8:-qc-${endpoint_lower}-${TRAFFIC}}"
 CRON="${consumer_cron:-0 * * * *}"
-MAX_MSG="${consumer_max_messages:-8000}"
-JOB_YAML="./mlops/azureml/configs/queue_consumer_job.yml"
+MAX_MSG="${consumer_max_messages:-200}"
+JOB_YAML="${JOB_YAML:-/mnt/c/Repo/ML-bis/ml-azua/mlops/azureml/configs/queue_consumer_job.yml}"
 TIMEZONE="UTC" 
-endpoint_lower="$(echo "${ENDPOINT}" | tr '[:upper:]' '[:lower:]')"
 echo "🔔 Scheduling consumer:"
 echo "  RG/WS        : ${RG}/${WS}"
 echo "  schedule     : ${SCHED}"
-echo "  job yaml     : ${JOB_YAML}"
 echo "  queue        : ${QUEUE_NAME}"
 echo "  container    : ${CONTAINER}"
 echo "  cron         : ${CRON}"
 echo "  max_messages : ${MAX_MSG}"
 echo "  storage acct : ${STORAGE}"
 echo "  timezone     : ${TIMEZONE}"
+echo "  job yaml     : ${JOB_YAML}"
+
+test -f "${JOB_YAML}" || { echo "❌ JOB_YAML not found: ${JOB_YAML}"; exit 1; }
+
+tmp_job="$(mktemp).yml"
 tmp_sched="$(mktemp)"
+
+JOB_DIR="$(realpath "$(dirname "$JOB_YAML")")"
+REPO_ROOT="$(realpath "${JOB_DIR}/../../..")"
+CONDA_ABS="${REPO_ROOT}/mlops/azureml/configs/env-conda.yml"
+CODE_ABS="${REPO_ROOT}"
+
+cp "${JOB_YAML}" "${tmp_job}"
+yq -i "
+  .inputs.queue_name = \"${QUEUE_NAME}\" |
+  .inputs.parquet_container = \"${CONTAINER}\" |
+  .inputs.storage_account_name = \"${STORAGE}\" |
+  .inputs.max_messages = \"${MAX_MSG}\" |
+  .compute = \"azureml:cpu-cluster\" |
+  .code = \"${CODE_ABS}\" |
+  .environment.conda_file = \"${CONDA_ABS}\"
+" "${tmp_job}"
+
 cat > "${tmp_sched}" <<YAML
-$schema: https://azuremlschemas.azureedge.net/latest/schedule.schema.json
+\$schema: https://azuremlschemas.azureedge.net/latest/schedule.schema.json
 name: ${SCHED}
 display_name: ${SCHED}
 trigger:
   type: cron
   expression: "${CRON}"
   time_zone: "${TIMEZONE}"
-create_job: ${JOB_YAML}
+create_job: "${tmp_job}"
 YAML
-az extension show -n ml >/dev/null 2>&1 || az extension add -n ml -y >/dev/null
+
 if az ml schedule show -g "${RG}" -w "${WS}" -n "${SCHED}" >/dev/null 2>&1; then
   echo "↻ Updating existing schedule ${SCHED}"
-  az ml schedule update -g "${RG}" -w "${WS}" -f "${tmp_sched}"     --set inputs.queue_name="${QUEUE_NAME}"           inputs.parquet_container="${CONTAINER}"           inputs.max_messages="${MAX_MSG}"           inputs.storage_account_name="${STORAGE}" >/dev/null
+  az ml schedule update -g "${RG}" -w "${WS}" -f "${tmp_sched}"
 else
   echo "➕ Creating schedule ${SCHED}"
-  az ml schedule create -g "${RG}" -w "${WS}" -f "${tmp_sched}"     --set inputs.queue_name="${QUEUE_NAME}"           inputs.parquet_container="${CONTAINER}"           inputs.max_messages="${MAX_MSG}"           inputs.storage_account_name="${STORAGE}" >/dev/null
+  az ml schedule create -g "${RG}" -w "${WS}" -f "${tmp_sched}"
 fi
-rm -f "${tmp_sched}" || true
+
+rm -f "${tmp_sched}" "${tmp_job}" || true
 echo "✅ Schedule ensured: ${SCHED}"
