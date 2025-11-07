@@ -103,7 +103,7 @@ jobs:
       envname: ${{ inputs.environment }}
       consumer_cron: ${{ inputs.consumer_cron }}
       consumer_max_messages: ${{ inputs.consumer_max_messages }}
-      JOB_YAML: ${{ github.workspace }}/mlops/azureml/configs/queue_consumer_job.yml
+      PIPELINE_YAML: ${{ github.workspace }}/mlops/azureml/configs/queue_consumer_pipeline.yml
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -131,100 +131,6 @@ jobs:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      - name: Sanity check — schedule supports pipeline? (pre-upgrade)
-        shell: bash
-        continue-on-error: true
-        id: sanity_pre
-        env:
-          RG: ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }}
-          WS: ${{ needs.get-config.outputs.aml_workspace }}
-        run: |
-          set -euo pipefail
-          echo "== Versions (pre) =="; az --version || true; az extension show -n ml || true
-
-          cat > hello_pipeline.yml <<'YAML'
-          $schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
-          type: pipeline
-          display_name: Hello
-          settings: { default_compute: azureml:cpu-cluster }
-          jobs:
-            echo:
-              type: command
-              command: echo hello
-              environment:
-                image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
-          YAML
-
-          cat > sched.yml <<'YAML'
-          $schema: https://azuremlschemas.azureedge.net/latest/schedule.schema.json
-          name: sanity_pipeline_schedule_tmp
-          trigger:
-            type: cron
-            expression: "0 * * * *"
-            time_zone: "UTC"
-          create_job: ./hello_pipeline.yml
-          YAML
-
-          set +e
-          az ml schedule create -g "$RG" -w "$WS" -f sched.yml
-          rc=$?
-          set -e
-
-          echo "pre_upgrade_rc=$rc" >> $GITHUB_OUTPUT
-          if [ $rc -eq 0 ]; then
-            echo "✅ Pre-upgrade sanity PASS (pipeline déjà supporté)"
-            az ml schedule delete -g "$RG" -w "$WS" -n sanity_pipeline_schedule_tmp -y
-          else
-            echo "❌ Pre-upgrade sanity FAIL (probable extension trop ancienne)"
-          fi
-
-      - name: Upgrade Azure CLI ML extension
-        if: steps.sanity_pre.outputs.pre_upgrade_rc != '0'
-        shell: bash
-        run: |
-          set -euo pipefail
-          az config set extension.use_dynamic_install=yes_without_prompt
-          az upgrade -y || true
-          az extension remove -n ml || true
-          az extension add -n ml -y --upgrade
-          echo "== Versions (post) =="; az --version; az extension show -n ml
-
-      - name: Sanity re-check — after upgrade
-        if: steps.sanity_pre.outputs.pre_upgrade_rc != '0'
-        shell: bash
-        env:
-          RG: ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }}
-          WS: ${{ needs.get-config.outputs.aml_workspace }}
-        run: |
-          set -euo pipefail
-          # Recrée les fichiers (l'étape précédente peut avoir nettoyé le workspace)
-          cat > hello_pipeline.yml <<'YAML'
-          $schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
-          type: pipeline
-          display_name: Hello
-          settings: { default_compute: azureml:cpu-cluster }
-          jobs:
-            echo:
-              type: command
-              command: echo hello
-              environment:
-                image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
-          YAML
-
-          cat > sched.yml <<'YAML'
-          $schema: https://azuremlschemas.azureedge.net/latest/schedule.schema.json
-          name: sanity_pipeline_schedule_tmp
-          trigger:
-            type: cron
-            expression: "0 * * * *"
-            time_zone: "UTC"
-          create_job: ./hello_pipeline.yml
-          YAML
-
-          az ml schedule create -g "$RG" -w "$WS" -f sched.yml
-          echo "✅ Post-upgrade sanity PASS"
-          az ml schedule delete -g "$RG" -w "$WS" -n sanity_pipeline_schedule_tmp -y
-
       - name: Create endpoint
         if: inputs.deploy_blue || inputs.deploy_green
         run: ml-mlops-templates/.github/scripts/create_endpoint.sh
