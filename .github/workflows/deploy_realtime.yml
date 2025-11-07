@@ -103,6 +103,7 @@ jobs:
       envname: ${{ inputs.environment }}
       consumer_cron: ${{ inputs.consumer_cron }}
       consumer_max_messages: ${{ inputs.consumer_max_messages }}
+      JOB_YAML: ${{ github.workspace }}/mlops/azureml/configs/queue_consumer_job.yml
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -141,7 +142,6 @@ jobs:
           SFLAG=""
           if [ "${{ inputs.enable_schedule }}" = "true" ]; then SFLAG="-S"; fi
           echo "Doing blue deployment"
-          echo "DEBUG enable_schedule=${{ inputs.enable_schedule }} SFLAG='$SFLAG'"
           ml-mlops-templates/.github/scripts/deploy.sh \
             -e ${{ inputs.endpoint_name }} \
             -n ${{ inputs.blue_deployment_name }} \
