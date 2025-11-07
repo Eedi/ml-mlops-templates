@@ -120,6 +120,7 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
+          ref: feat/queue_consumer 
       - name: Check blue-green deployment logic
         run: |
           ml-mlops-templates/.github/scripts/blue_green_logic_checks.sh
