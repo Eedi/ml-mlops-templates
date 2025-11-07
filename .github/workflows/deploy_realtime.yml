@@ -140,6 +140,7 @@ jobs:
           SFLAG=""
           if [ "${{ inputs.enable_schedule }}" = "true" ]; then SFLAG="-S"; fi
           echo "Doing blue deployment"
+          echo "DEBUG enable_schedule=${{ inputs.enable_schedule }} SFLAG='$SFLAG'"
           ml-mlops-templates/.github/scripts/deploy.sh \
             -e ${{ inputs.endpoint_name }} \
             -n ${{ inputs.blue_deployment_name }} \
