@@ -2,6 +2,8 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Read parameters
 while getopts "w:r:e:n:c:t:s:S" flag
 do
@@ -13,7 +15,7 @@ do
     c) deployment_config=${OPTARG};;
     t) traffic_percentage=${OPTARG};;
     s) storage_account=${OPTARG};;
-    S) enable_schedule=1;;
+    S) enable_schedule=true;;
   esac
 done
 
@@ -35,7 +37,6 @@ ws_identity=$(az ml workspace show --name "$aml_workspace" --query "identity.pri
 consumer_max_messages="${consumer_max_messages:-8000}"
 consumer_cron="${consumer_cron:-0 * * * *}"  # hourly
 schedule_name="qc-$(echo "$endpoint_name" | tr '[:upper:]' '[:lower:]')-$traffic_type"
-enable_schedule="${enable_schedule:-false}"
 
 echo "🔍 Ensuring log storage resources exist..."
 echo "Creating queue"
