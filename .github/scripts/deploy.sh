@@ -35,7 +35,7 @@ ws_identity=$(az ml workspace show --name "$aml_workspace" --query "identity.pri
 consumer_max_messages="${consumer_max_messages:-8000}"
 consumer_cron="${consumer_cron:-0 * * * *}"  # hourly
 schedule_name="qc-$(echo "$endpoint_name" | tr '[:upper:]' '[:lower:]')-$traffic_type"
-enable_schedule="${enable_schedule:-0}"
+enable_schedule="${enable_schedule:-false}"
 
 echo "🔍 Ensuring log storage resources exist..."
 echo "Creating queue"
@@ -109,7 +109,7 @@ echo "ℹ️ Final deployment status: $deploy_status"
 
 if [ "$deploy_status" = "Succeeded" ]; then
   echo "✅ Deployment completed successfully"
-  if [ "${enable_schedule}" = "1" ]; then
+  if [ "${enable_schedule}" = "true" ]; then
     echo "📅 Scheduling enabled"
     bash "$SCRIPT_DIR/schedule_consumer.sh" \
       "${resource_group}" \
