@@ -47,9 +47,8 @@ yq -i "
   .inputs.max_messages         = {\"type\":\"integer\", \"default\": $MAX_MSG }
 " "$tmp_job"
 
-# puis ta schedule yaml fait:
 cat > "$tmp_sched" <<YAML
-$schema: https://azuremlschemas.azureedge.net/latest/schedule.schema.json
+\$schema: https://azuremlschemas.azureedge.net/latest/schedule.schema.json
 name: ${SCHED}
 display_name: ${SCHED}
 trigger:
