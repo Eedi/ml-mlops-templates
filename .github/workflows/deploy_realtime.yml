@@ -103,7 +103,7 @@ jobs:
       envname: ${{ inputs.environment }}
       consumer_cron: ${{ inputs.consumer_cron }}
       consumer_max_messages: ${{ inputs.consumer_max_messages }}
-      JOB_YAML: ${{ github.workspace }}/mlops/azureml/configs/queue_consumer_pipeline.yml
+      JOB_YAML: ${{ github.workspace }}/mlops/azureml/configs/queue_consumer_job.yml
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
