@@ -14,6 +14,8 @@ endpoint_lower="$(echo "${ENDPOINT}" | tr '[:upper:]' '[:lower:]')"
 QUEUE_NAME="${6:-q-${endpoint_lower}-${TRAFFIC}}"
 CONTAINER="${7:-blob-${QUEUE_NAME}}"
 SCHED="${8:-qc-${endpoint_lower}-${TRAFFIC}}"
+UAMI_RESOURCE_ID="${9:?uami resource id required}"
+UAMI_CLIENT_ID="${10:?uami client id required}"
 
 CRON="${consumer_cron:-0 * * * *}"
 MAX_MSG="${consumer_max_messages:-8000}"
@@ -41,7 +43,10 @@ yq -i "
   .inputs.storage_account_name = \"${STORAGE}\" |
   .inputs.queue_name = \"${QUEUE_NAME}\" |
   .inputs.parquet_container = \"${CONTAINER}\" |
-  .inputs.max_messages = ${MAX_MSG}
+  .inputs.max_messages = ${MAX_MSG} |
+  .jobs.consumer.identity.type = \"user_assigned\" |
+  .jobs.consumer.identity.user_assigned_identities = [{\"resource_id\": \"${UAMI_RESOURCE_ID}\"}] |  
+  .jobs.consumer.environment_variables.AZURE_CLIENT_ID = \"${UAMI_CLIENT_ID}\"
 " "${PIPELINE_YAML}"
 
 cat > "${tmp_sched}" <<YAML
@@ -52,7 +57,9 @@ trigger:
   type: cron
   expression: "${CRON}"
   time_zone: "${TIMEZONE}"
-create_job: "$(realpath "${PIPELINE_YAML}")"
+create_job: "$(realpath "${PIPELINE_YAML}")
+  identity:
+    type: managed"
 YAML
 
 az ml schedule create -g "${RG}" -w "${WS}" -f "${tmp_sched}"
