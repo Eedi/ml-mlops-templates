@@ -14,8 +14,8 @@ endpoint_lower="$(echo "${ENDPOINT}" | tr '[:upper:]' '[:lower:]')"
 QUEUE_NAME="${6:-q-${endpoint_lower}-${TRAFFIC}}"
 CONTAINER="${7:-blob-${QUEUE_NAME}}"
 SCHED="${8:-qc-${endpoint_lower}-${TRAFFIC}}"
-UAMI_RESOURCE_ID="${9:?uami resource id required}"
-UAMI_CLIENT_ID="${10:?uami client id required}"
+# UAMI_RESOURCE_ID="${9:?uami resource id required}"
+# UAMI_CLIENT_ID="${10:?uami client id required}"
 
 CRON="${consumer_cron:-0 * * * *}"
 MAX_MSG="${consumer_max_messages:-8000}"
@@ -43,12 +43,11 @@ yq -i "
   .inputs.storage_account_name = \"${STORAGE}\" |
   .inputs.queue_name = \"${QUEUE_NAME}\" |
   .inputs.parquet_container = \"${CONTAINER}\" |
-  .inputs.max_messages = ${MAX_MSG} |
-  .jobs.consumer.identity.type = \"user_assigned\" |
-  .jobs.consumer.identity.user_assigned_identities = [{\"resource_id\": \"${UAMI_RESOURCE_ID}\"}] |  
-  .jobs.consumer.environment_variables.AZURE_CLIENT_ID = \"${UAMI_CLIENT_ID}\"
+  .inputs.max_messages = ${MAX_MSG}
 " "${PIPELINE_YAML}"
-
+  # .jobs.consumer.identity.type = \"user_assigned\" |
+  # .jobs.consumer.identity.user_assigned_identities = [{\"resource_id\": \"${UAMI_RESOURCE_ID}\"}] |  
+  # .jobs.consumer.environment_variables.AZURE_CLIENT_ID = \"${UAMI_CLIENT_ID}\"
 cat > "${tmp_sched}" <<YAML
 \$schema: https://azuremlschemas.azureedge.net/latest/schedule.schema.json
 name: ${SCHED}

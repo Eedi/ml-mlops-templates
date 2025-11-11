@@ -114,29 +114,29 @@ if [ "$deploy_status" = "Succeeded" ]; then
   echo "DEBUG in deploy.sh: enable_schedule='${enable_schedule}'"
   if [ "${enable_schedule}" = "true" ]; then
     echo "📅 Scheduling enabled"
-    # Ensure UAMI & RBAC 
-    location=$(az ml workspace show --name "$aml_workspace" --query location -o tsv)
+    # # Ensure UAMI & RBAC 
+    # location=$(az ml workspace show --name "$aml_workspace" --query location -o tsv)
 
-    uami_name="mi-${aml_workspace}-consumer"
-    uami_id=$(az identity show -g "$resource_group" -n "$uami_name" --query id -o tsv 2>/dev/null || true)
-    if [ -z "$uami_id" ]; then
-      echo "🆕 Creating UAMI $uami_name"
-      az identity create -g "$resource_group" -n "$uami_name" -l "$location" >/dev/null
-      uami_id=$(az identity show -g "$resource_group" -n "$uami_name" --query id -o tsv)
-    fi
-    uami_pi=$(az identity show -g "$resource_group" -n "$uami_name" --query principalId -o tsv)
-    uami_client_id=$(az identity show -g "$resource_group" -n "$uami_name" --query clientId -o tsv)
+    # uami_name="mi-${aml_workspace}-consumer"
+    # uami_id=$(az identity show -g "$resource_group" -n "$uami_name" --query id -o tsv 2>/dev/null || true)
+    # if [ -z "$uami_id" ]; then
+    #   echo "🆕 Creating UAMI $uami_name"
+    #   az identity create -g "$resource_group" -n "$uami_name" -l "$location" >/dev/null
+    #   uami_id=$(az identity show -g "$resource_group" -n "$uami_name" --query id -o tsv)
+    # fi
+    # uami_pi=$(az identity show -g "$resource_group" -n "$uami_name" --query principalId -o tsv)
+    # uami_client_id=$(az identity show -g "$resource_group" -n "$uami_name" --query clientId -o tsv)
 
-    echo "🔗 Attaching UAMI to workspace"
-    az ml workspace update -g "$resource_group" -n "$aml_workspace" \
-      --set identity.type="SystemAssigned,UserAssigned" \
-            identity.user_assigned_identities."$uami_id"={} >/dev/null
+    # echo "🔗 Attaching UAMI to workspace"
+    # az ml workspace update -g "$resource_group" -n "$aml_workspace" \
+    #   --set identity.type="SystemAssigned,UserAssigned" \
+    #         identity.user_assigned_identities."$uami_id"={} >/dev/null
 
-    echo "🔐 Grant RBAC on Storage for UAMI"
-    az role assignment create --assignee-object-id "$uami_pi" --assignee-principal-type ServicePrincipal \
-      --role "Storage Queue Data Contributor" --scope "$queue_id" >/dev/null || true
-    az role assignment create --assignee-object-id "$uami_pi" --assignee-principal-type ServicePrincipal \
-      --role "Storage Blob Data Contributor"  --scope "$container_id"  >/dev/null || true
+    # echo "🔐 Grant RBAC on Storage for UAMI"
+    # az role assignment create --assignee-object-id "$uami_pi" --assignee-principal-type ServicePrincipal \
+    #   --role "Storage Queue Data Contributor" --scope "$queue_id" >/dev/null || true
+    # az role assignment create --assignee-object-id "$uami_pi" --assignee-principal-type ServicePrincipal \
+    #   --role "Storage Blob Data Contributor"  --scope "$container_id"  >/dev/null || true
 
     bash "$SCRIPT_DIR/schedule_consumer.sh" \
       "${resource_group}" \
@@ -146,9 +146,9 @@ if [ "$deploy_status" = "Succeeded" ]; then
       "${storage_account}" \
       "${queue_name}" \
       "${staging_container_name}" \
-      "${schedule_name}" \
-      "${uami_id}" \
-      "${uami_client_id}"
+      "${schedule_name}"
+      # "${uami_id}" \
+      # "${uami_client_id}"
       
   else
     echo "⏭️  Scheduling skipped (use -S to enable)"
