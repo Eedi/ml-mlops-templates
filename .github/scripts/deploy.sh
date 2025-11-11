@@ -33,7 +33,8 @@ queue_name="q-$(echo $endpoint_name | tr '[:upper:]' '[:lower:]')-$traffic_type"
 queue_id="${storage_account_id}/queueServices/default/queues/${queue_name}"
 staging_container_name="blob-$queue_name"
 container_id=$storage_account_id/blobServices/default/containers/$staging_container_name
-ws_identity=$(az ml workspace show --name "$aml_workspace" --query "identity.principal_id" -o tsv | sed 's/[[:space:]]//g')
+compute_name="${compute_name:-monitoring-cluster}"
+compute_identity=$(az ml compute show -n "$compute_name" --query identity.principal_id -o tsv)
 consumer_max_messages="${consumer_max_messages:-8000}"
 consumer_cron="${consumer_cron:-0 * * * *}"  # hourly
 schedule_name="qc-$(echo "$endpoint_name" | tr '[:upper:]' '[:lower:]')-$traffic_type"
@@ -49,9 +50,9 @@ az storage container create --name $staging_container_name --account-name $stora
 echo "Assigning Storage Blob Data Contributor role to endpoint identity"
 az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope $container_id
 
-# echo "Assigning roles to AML workspace identity"
-# az role assignment create --assignee-object-id "$ws_identity" --assignee-principal-type ServicePrincipal --role "Storage Queue Data Contributor" --scope "$queue_id" || true
-# az role assignment create --assignee-object-id "$ws_identity" --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor"  --scope "$container_id" || true
+echo "Assigning roles to compute identity"
+az role assignment create --assignee-object-id "$compute_identity" --assignee-principal-type ServicePrincipal --role "Storage Queue Data Contributor" --scope "$queue_id" || true
+az role assignment create --assignee-object-id "$compute_identity" --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor"  --scope "$container_id" || true
 
 # Define environment variables for deployment
 deployment_env_vars="\
