@@ -56,9 +56,7 @@ trigger:
   type: cron
   expression: "${CRON}"
   time_zone: "${TIMEZONE}"
-create_job: "$(realpath "${PIPELINE_YAML}")
-  identity:
-    type: managed"
+create_job: "$(realpath "${PIPELINE_YAML}")"
 YAML
 
 az ml schedule create -g "${RG}" -w "${WS}" -f "${tmp_sched}"
