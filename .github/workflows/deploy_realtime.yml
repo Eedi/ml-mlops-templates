@@ -103,7 +103,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Eedi/ml-mlops-templates
-          ref: ${{github.sha}} # Use the same commit as the calling workflow
+          ref: prime_release_20250826 # Same tag as this workflow file
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
       - name: Check blue-green deployment logic
