@@ -106,7 +106,7 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
-          ref: ${{ github.workflow_sha }}
+          ref: ${{ github.action_ref }}
       - name: Check blue-green deployment logic
         run: |
           ml-mlops-templates/.github/scripts/blue_green_logic_checks.sh

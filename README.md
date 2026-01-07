@@ -125,3 +125,28 @@ To make updates to endpoint level resources, no shadow deployment variables shou
 
 #### How are container images managed for shadow deployments?
 Assuming the shadow deployment config points at <proj>.azurecr.io/envname:latest then it will simply use the latest environment image.
+
+## Terraform infrastructure
+
+The reusable `terraform_azureml.yml` workflow handles planning and applying Terraform changes:
+
+```
+jobs:
+  terraform-dev:
+    uses: Eedi/ml-mlops-templates/.github/workflows/terraform_azureml.yml@vX.Y.Z
+    with:
+      environment: anet-dev
+      environment_config_file: config-infra-anet-dev.yml
+      apply: true   # switch to false to run plan-only
+```
+
+Inputs:
+
+- `environment` – GitHub environment that should receive the deployment.
+- `environment_config_file` – Path to the environment YAML consumed by `read-yaml.yml`.
+- `terraform_directory` – Path (relative to the workspace) where the Terraform code lives; defaults to `ml-mlops-templates/terraform/azureml`.
+- `apply` – Set to `true` to run `terraform apply` after a successful plan.
+- `import_script` – Optional helper (defaults to `../../scripts/terraform/import_unmanaged_resources.sh` relative to the Terraform directory) run before `terraform apply`. Override with a path relative to the Terraform working directory if your project needs extra imports.
+- `repo_name` – Derived automatically from `github.event.repository.name` and injected via `TF_VAR_repo_name` for tagging.
+
+The workflow expects the calling repository to provide the same Azure credentials used by the training and deployment pipelines (`ARM_CLIENT_ID`, `ARM_SUBSCRIPTION_ID`, `ARM_TENANT_ID`, `ARM_BACKEND_*`, etc.).

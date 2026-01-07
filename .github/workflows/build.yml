@@ -84,6 +84,6 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
-          ref: ${{ github.workflow_sha }}
+          ref: ${{ github.action_ref }}
       - name: Update azure ml environment
         run: ml-mlops-templates/.github/scripts/build_env.sh
