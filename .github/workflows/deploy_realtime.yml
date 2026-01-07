@@ -58,7 +58,7 @@ on:
 
 jobs:
   get-config:
-      uses: Eedi/ml-mlops-templates/.github/workflows/read-yaml.yml@main
+      uses: ./.github/workflows/read-yaml.yml
       with:
         file_name: ${{ inputs.environment_config_file }}
 
@@ -106,6 +106,7 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
+          ref: ${{ github.workflow_sha }}
       - name: Check blue-green deployment logic
         run: |
           ml-mlops-templates/.github/scripts/blue_green_logic_checks.sh

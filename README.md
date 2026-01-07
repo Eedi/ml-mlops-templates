@@ -1,5 +1,7 @@
 # ML Ops Templates
 
+> Always reference a tagged release (or commit SHA) when invoking these reusable workflows so the scripts and workflows stay in lock-step with the version you audited.
+
 
 ## Building an image
 Use `build.yml` in a github workflow in the ML project, like:  
@@ -7,7 +9,7 @@ Use `build.yml` in a github workflow in the ML project, like:
 build-dev:
     needs: pre-commit
     if: github.ref == 'refs/heads/prime/deploy'
-    uses: Eedi/ml-mlops-templates/.github/workflows/build.yml@main
+    uses: Eedi/ml-mlops-templates/.github/workflows/build.yml@vX.Y.Z
     with:
         environment: anet-dev
         environment_config_file: config-infra-anet-dev.yml
@@ -38,7 +40,7 @@ Use `deploy_realtime.yml` in a github workflow in the ML project, like:
 ```
 deploy-nbq-dev:
 needs: build-dev
-uses: Eedi/ml-mlops-templates/.github/workflows/deploy_realtime.yml@main
+uses: Eedi/ml-mlops-templates/.github/workflows/deploy_realtime.yml@vX.Y.Z
 with:
     environment: anet-dev
     environment_config_file: config-infra-anet-dev.yml
@@ -123,4 +125,3 @@ To make updates to endpoint level resources, no shadow deployment variables shou
 
 #### How are container images managed for shadow deployments?
 Assuming the shadow deployment config points at <proj>.azurecr.io/envname:latest then it will simply use the latest environment image.
-
