@@ -1,0 +1,110 @@
+name: train-pipeline
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "GitHub environment to target (e.g. anet-dev, anet-prod)"
+        required: true
+        type: string
+      environment_config_file:
+        description: "Path to the infra config YAML inside the calling repository"
+        required: true
+        type: string
+      pipeline_config_path:
+        description: "Path to the materialised training pipeline YAML in the calling repository"
+        required: true
+        type: string
+      run_build:
+        description: "Rebuild and publish the training environment before submitting the pipeline"
+        required: false
+        default: true
+        type: boolean
+      ml_env_name:
+        description: "Azure ML environment name to build/update when run_build is enabled"
+        required: false
+        type: string
+      ml_env_description:
+        description: "Description for the Azure ML environment"
+        required: false
+        type: string
+      tags:
+        description: "Space-delimited tags applied to the Azure ML environment"
+        required: false
+        type: string
+      target_layer:
+        description: "Docker target layer passed to the build workflow"
+        required: false
+        default: training
+        type: string
+      maximise_disk_space:
+        description: "Free runner disk space prior to build"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  get-config:
+    uses: ./.github/workflows/read-yaml.yml
+    with:
+      file_name: ${{ inputs.environment_config_file }}
+
+  build:
+    if: inputs.run_build
+    needs: get-config
+    uses: ./.github/workflows/build.yml
+    with:
+      environment: ${{ inputs.environment }}
+      environment_config_file: ${{ inputs.environment_config_file }}
+      ml_env_name: ${{ inputs.ml_env_name }}
+      ml_env_description: ${{ inputs.ml_env_description }}
+      target_layer: ${{ inputs.target_layer }}
+      tags: ${{ inputs.tags }}
+      maximise_disk_space: ${{ inputs.maximise_disk_space }}
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
+
+  submit:
+    needs:
+      - get-config
+      - build
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      resource_group: ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }}
+      aml_workspace: mlw-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
+      pipeline_config_path: ${{ inputs.pipeline_config_path }}
+    steps:
+      - name: Checkout project repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Check out templates repository
+        uses: actions/checkout@v4
+        with:
+          repository: Eedi/ml-mlops-templates
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: ml-mlops-templates
+          ref: ${{ github.action_ref }}
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: Submit training pipeline
+        run: ml-mlops-templates/scripts/training/train_pipeline.sh

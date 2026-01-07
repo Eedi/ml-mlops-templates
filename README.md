@@ -150,3 +150,30 @@ Inputs:
 - `repo_name` – Derived automatically from `github.event.repository.name` and injected via `TF_VAR_repo_name` for tagging.
 
 The workflow expects the calling repository to provide the same Azure credentials used by the training and deployment pipelines (`ARM_CLIENT_ID`, `ARM_SUBSCRIPTION_ID`, `ARM_TENANT_ID`, `ARM_BACKEND_*`, etc.).
+
+## Training pipelines
+
+`train_pipeline.yml` submits a materialised Azure ML pipeline definition:
+
+```yaml
+jobs:
+  train-prime:
+    uses: Eedi/ml-mlops-templates/.github/workflows/train_pipeline.yml@vX.Y.Z
+    with:
+      environment: anet-dev
+      environment_config_file: config-infra-anet-dev.yml
+      pipeline_config_path: configs/materialised/pipelines/train_pipeline_eedi_dev.yml
+      run_build: true
+      ml_env_name: ml-azua-train-env
+      ml_env_description: "Environment for ml-azua training"
+      tags: "'team=data-science' 'repo=ml-azua'"
+      maximise_disk_space: true
+```
+
+Inputs:
+
+- `environment`, `environment_config_file` – Same contract as `build.yml` / `terraform_azureml.yml`.
+- `pipeline_config_path` – Path inside the calling repository to the rendered pipeline YAML.
+- `run_build` – Rebuild the training environment before submission. When `true`, `ml_env_name`, `ml_env_description`, `target_layer`, `tags`, and `maximise_disk_space` are forwarded to `build.yml`.
+
+The workflow reuses `build.yml` when requested, then calls `scripts/training/train_pipeline.sh` to execute `az ml job create`.
