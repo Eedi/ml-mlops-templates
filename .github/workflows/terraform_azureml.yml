@@ -67,7 +67,7 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
-          ref: ${{ github.action_ref }}
+          ref: ${{ needs.get-config.outputs.templates_ref }}
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -141,7 +141,7 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
-          ref: ${{ github.action_ref }}
+          ref: ${{ needs.get-config.outputs.templates_ref }}
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
