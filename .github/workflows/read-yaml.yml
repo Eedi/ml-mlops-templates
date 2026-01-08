@@ -106,6 +106,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Eedi/ml-mlops-templates
+          token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.action_ref }}
           path: templates_repo
       - name: Read test
