@@ -6,6 +6,10 @@ on:
       file_name:
         required: true
         type: string
+      templates_repo_ref:
+        description: "Git ref of ml-mlops-templates to check out"
+        required: true
+        type: string
     outputs:
       location:
         description: "The resource group to use"
@@ -107,7 +111,7 @@ jobs:
         with:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.action_ref }}
+          ref: ${{ inputs.templates_repo_ref }}
           path: templates_repo
       - name: Read test
         uses: ./templates_repo/read_yaml_action

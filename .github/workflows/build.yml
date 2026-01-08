@@ -7,6 +7,9 @@ on:
       environment_config_file:
         required: true
         type: string
+      templates_repo_ref:
+        required: true
+        type: string
       ml_env_name:
         required: true
         type: string
@@ -28,6 +31,7 @@ jobs:
       uses: ./.github/workflows/read-yaml.yml
       with:
         file_name: ${{ inputs.environment_config_file }}
+        templates_repo_ref: ${{ inputs.templates_repo_ref }}
 
   build:
     needs: get-config
@@ -84,6 +88,6 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
-          ref: ${{ github.action_ref }}
+          ref: ${{ inputs.templates_repo_ref }}
       - name: Update azure ml environment
         run: ml-mlops-templates/.github/scripts/build_env.sh

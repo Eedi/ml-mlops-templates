@@ -11,6 +11,10 @@ on:
         description: "Path to the infra config YAML inside the calling repository"
         required: true
         type: string
+      templates_repo_ref:
+        description: "Git ref of ml-mlops-templates to check out"
+        required: true
+        type: string
       pipeline_config_path:
         description: "Path to the materialised training pipeline YAML in the calling repository"
         required: true
@@ -52,12 +56,14 @@ jobs:
     uses: ./.github/workflows/read-yaml.yml
     with:
       file_name: ${{ inputs.environment_config_file }}
+      templates_repo_ref: ${{ inputs.templates_repo_ref }}
 
   build:
     if: inputs.run_build
     needs: get-config
     uses: ./.github/workflows/build.yml
     with:
+      templates_repo_ref: ${{ inputs.templates_repo_ref }}
       environment: ${{ inputs.environment }}
       environment_config_file: ${{ inputs.environment_config_file }}
       ml_env_name: ${{ inputs.ml_env_name }}
@@ -97,7 +103,7 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
-          ref: ${{ github.action_ref }}
+          ref: ${{ inputs.templates_repo_ref }}
 
       - name: Azure login
         uses: azure/login@v1

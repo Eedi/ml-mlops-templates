@@ -7,6 +7,9 @@ on:
       environment_config_file:
         required: true
         type: string
+      templates_repo_ref:
+        required: true
+        type: string
       run_load_test:
         required: true
         type: boolean
@@ -61,6 +64,7 @@ jobs:
       uses: ./.github/workflows/read-yaml.yml
       with:
         file_name: ${{ inputs.environment_config_file }}
+        templates_repo_ref: ${{ inputs.templates_repo_ref }}
 
   deploy:
     needs: get-config
@@ -106,7 +110,7 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
-          ref: ${{ github.action_ref }}
+          ref: ${{ inputs.templates_repo_ref }}
       - name: Check blue-green deployment logic
         run: |
           ml-mlops-templates/.github/scripts/blue_green_logic_checks.sh

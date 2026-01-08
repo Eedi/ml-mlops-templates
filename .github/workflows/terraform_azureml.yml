@@ -11,6 +11,10 @@ on:
         description: "Path to the infra config YAML inside the calling repository"
         required: true
         type: string
+      templates_repo_ref:
+        description: "Git ref of ml-mlops-templates to check out"
+        required: true
+        type: string
       terraform_directory:
         description: "Path to the Terraform project inside the templates repository"
         required: false
@@ -36,6 +40,7 @@ jobs:
     uses: ./.github/workflows/read-yaml.yml
     with:
       file_name: ${{ inputs.environment_config_file }}
+      templates_repo_ref: ${{ inputs.templates_repo_ref }}
 
   plan:
     needs: get-config
@@ -67,7 +72,7 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
-          ref: ${{ github.action_ref }}
+          ref: ${{ inputs.templates_repo_ref }}
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -141,7 +146,7 @@ jobs:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
           path: ml-mlops-templates
-          ref: ${{ github.action_ref }}
+          ref: ${{ inputs.templates_repo_ref }}
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
