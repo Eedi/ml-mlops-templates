@@ -100,10 +100,16 @@ jobs:
       terraform_st_container_name: ${{  steps.read_action_js.outputs.terraform_st_container_name }}
       terraform_st_key: ${{  steps.read_action_js.outputs.terraform_st_key }}
     steps:
-      - name: Checking out repo
+      - name: Checkout caller repository
         uses: actions/checkout@v4
+      - name: Checkout templates repository
+        uses: actions/checkout@v4
+        with:
+          repository: Eedi/ml-mlops-templates
+          ref: ${{ github.action_ref }}
+          path: templates_repo
       - name: Read test
-        uses: Eedi/ml-mlops-templates/read_yaml_action@${{ github.action_ref }}
+        uses: ./templates_repo/read_yaml_action
         id: read_action_js
         with:
           config: ${{ github.workspace }}/${{ inputs.file_name }}
