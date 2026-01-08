@@ -73,9 +73,6 @@ on:
       terraform_st_key:
         description: "Terraform State Key"
         value: ${{ jobs.read-yaml.outputs.terraform_st_key }}
-      templates_ref:
-        description: "Ref of the templates repository checkout"
-        value: ${{ jobs.read-yaml.outputs.templates_ref }}
 jobs:
   read-yaml:
     runs-on: ubuntu-latest
@@ -102,32 +99,15 @@ jobs:
       terraform_st_storage_account: ${{  steps.read_action_js.outputs.terraform_st_storage_account }}
       terraform_st_container_name: ${{  steps.read_action_js.outputs.terraform_st_container_name }}
       terraform_st_key: ${{  steps.read_action_js.outputs.terraform_st_key }}
-      templates_ref: ${{ steps.templates_ref.outputs.ref }}
     steps:
       - name: Checkout caller repository
         uses: actions/checkout@v4
-      - name: Resolve templates ref
-        id: templates_ref
-        shell: bash
-        env:
-          WORKFLOW_REF: ${{ github.workflow_ref }}
-        run: |
-          if [ -z "$WORKFLOW_REF" ]; then
-            echo "ref=refs/heads/main" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          REF="${WORKFLOW_REF##*@}"
-          if [ -z "$REF" ]; then
-            echo "ref=refs/heads/main" >> "$GITHUB_OUTPUT"
-          else
-            echo "ref=$REF" >> "$GITHUB_OUTPUT"
-          fi
       - name: Checkout templates repository
         uses: actions/checkout@v4
         with:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ steps.templates_ref.outputs.ref }}
+          ref: ${{ github.action_ref }}
           path: templates_repo
       - name: Read test
         uses: ./templates_repo/read_yaml_action
