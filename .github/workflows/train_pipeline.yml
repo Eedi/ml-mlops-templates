@@ -76,10 +76,50 @@ jobs:
       id-token: write
       contents: read
 
-  submit:
+  submit-with-build:
     needs:
       - get-config
       - build
+    if: inputs.run_build
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      resource_group: ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }}
+      aml_workspace: mlw-${{ needs.get-config.outputs.namespace }}-${{ needs.get-config.outputs.postfix }}${{ needs.get-config.outputs.environment }}
+      pipeline_config_path: ${{ inputs.pipeline_config_path }}
+    steps:
+      - name: Checkout project repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Check out templates repository
+        uses: actions/checkout@v4
+        with:
+          repository: Eedi/ml-mlops-templates
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: ml-mlops-templates
+          ref: ${{ inputs.templates_repo_ref }}
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: Submit training pipeline
+        run: ml-mlops-templates/scripts/training/train_pipeline.sh
+
+  submit-skip-build:
+    needs:
+      - get-config
+    if: ${{ !inputs.run_build }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     permissions:
