@@ -3,6 +3,13 @@
 > Always reference a tagged release (or commit SHA) when invoking these reusable workflows so the scripts and workflows stay in lock-step with the version you audited.
 
 
+## Versioning & Release Workflow
+- Work from `main`; land changes via PRs so CI runs on the merge commit.
+- Once the changes you want to release are on `main`, push the branch first (`git push origin main`).
+- Create an **annotated** tag using semver-style names (`vX.Y.Z`). Example: `git tag -a v1.0.0 -m "ml-azua refactor release"`.
+- Push the tag separately (`git push origin v1.0.0`) so consumers can pin workflows to the exact version.
+- Update release notes in GitHub (or a CHANGELOG) when the tag publishes, and notify downstream repos to bump their `uses: ...@vX.Y.Z` and `templates_repo_ref` pins.
+
 ## Building an image
 Use `build.yml` in a github workflow in the ML project, like:  
 ```
