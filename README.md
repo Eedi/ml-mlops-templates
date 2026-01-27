@@ -6,9 +6,11 @@
 ## Versioning & Release Workflow
 - Work from `main`; land changes via PRs so CI runs on the merge commit.
 - Once the changes you want to release are on `main`, push the branch first (`git push origin main`).
-- Create an **annotated** tag using semver-style names (`vX.Y.Z`). Example: `git tag -a v1.0.0 -m "ml-azua refactor release"`.
+- Create a **lightweight** tag using semver-style names (`vX.Y.Z`). Example: `git tag v1.0.0`.
 - Push the tag separately (`git push origin v1.0.0`) so consumers can pin workflows to the exact version.
 - Update release notes in GitHub (or a CHANGELOG) when the tag publishes, and notify downstream repos to bump their `uses: ...@vX.Y.Z` and `templates_repo_ref` pins.
+
+> **Why lightweight tags?** GitHub Actions has a [known limitation](https://github.com/orgs/community/discussions/48693) where nested reusable workflows with relative paths (e.g., `terraform_azureml.yml` calling `read-yaml.yml`) fail to resolve when referenced via annotated tags. Lightweight tags work correctly.
 
 ## Building an image
 Use `build.yml` in a github workflow in the ML project, like:  
