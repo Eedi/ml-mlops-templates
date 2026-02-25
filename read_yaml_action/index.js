@@ -85,6 +85,10 @@ try {
     core.setOutput("terraform_st_storage_account", terraform_st_storage_account);
     core.setOutput("terraform_st_container_name", terraform_st_container_name);
     core.setOutput("terraform_st_key", terraform_st_key);
+
+    // Model registry config (optional)
+    var model_registry_name = configYaml["variables"]["model_registry_name"];
+    core.setOutput("model_registry_name", model_registry_name ? String(model_registry_name) : "");
   });
   
 } catch (error) {
