@@ -50,6 +50,8 @@ outputs:
     description: "Terraform State Container name"
   terraform_st_key:
     description: 'Terraform State Key'
+  model_registry_name:
+    description: 'The shared model registry name'
 runs:
   using: 'node16'
   main: 'index.js'

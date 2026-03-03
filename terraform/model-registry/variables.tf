@@ -27,20 +27,3 @@ variable "repo_name" {
   type        = string
   description = "Repository identifier used in resource tagging"
 }
-
-# Variables passed by terraform_azureml.yml but unused by this root config
-variable "enable_aml_computecluster" {
-  description = "Unused - required for terraform_azureml.yml compatibility"
-  default     = false
-}
-
-variable "enable_monitoring" {
-  description = "Unused - required for terraform_azureml.yml compatibility"
-  default     = false
-}
-
-variable "slack_webhook_url" {
-  type        = string
-  description = "Unused - required for terraform_azureml.yml compatibility"
-  default     = ""
-}

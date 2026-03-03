@@ -2,9 +2,20 @@ const core = require('@actions/core');
 const github = require('@actions/github');
 const yaml = require('js-yaml');
 const fs = require('fs');
-checkGenerateEntity()
 
-try {  
+function safeString(value) {
+    return value != null ? String(value) : "";
+}
+
+function safeBool(value) {
+    return value === "true" || value === true;
+}
+
+function checkGenerateEntity(entity){
+    return entity.includes("$");
+}
+
+try {
     const configData = core.getInput('config');
     fs.readFile(configData, 'utf8', (err, data) => {
     if (err) {
@@ -13,25 +24,25 @@ try {
     }
     console.log(data);
     const SCHEMA = yaml.FAILSAFE_SCHEMA;
-    const configYaml = yaml.load(data, { schema: SCHEMA }); 
-        
-    // TODO Verify if variables do not exist or are empty
-    const namespace = String(configYaml["variables"]["namespace"]);
-    const postfix = String(configYaml["variables"]["postfix"]);
-    const environment = String(configYaml["variables"]["environment"]);
-    var enable_aml_computecluster = Boolean(configYaml["variables"]["enable_aml_computecluster"]);
-    var enable_monitoring = Boolean(configYaml["variables"]["enable_monitoring"]);
-    var resource_group = String(configYaml["variables"]["resource_group"]);
-    var location = String(configYaml["variables"]["location"]);
-    var aml_workspace = String(configYaml["variables"]["aml_workspace"]);
+    const configYaml = yaml.load(data, { schema: SCHEMA });
+    const vars = configYaml["variables"];
 
-    var terraform_version = String(configYaml["variables"]["terraform_version"]);
-    var terraform_workingdir = String(configYaml["variables"]["terraform_workingdir"]);
-    var terraform_st_location = String(configYaml["variables"]["terraform_st_location"]);
-    var terraform_st_resource_group = String(configYaml["variables"]["terraform_st_resource_group"]);
-    var terraform_st_storage_account = String(configYaml["variables"]["terraform_st_storage_account"]);
-    var terraform_st_container_name = String(configYaml["variables"]["terraform_st_container_name"]);
-    var terraform_st_key = String(configYaml["variables"]["terraform_st_key"]);
+    const namespace = safeString(vars["namespace"]);
+    const postfix = safeString(vars["postfix"]);
+    const environment = safeString(vars["environment"]);
+    var enable_aml_computecluster = safeBool(vars["enable_aml_computecluster"]);
+    var enable_monitoring = safeBool(vars["enable_monitoring"]);
+    var resource_group = safeString(vars["resource_group"]);
+    var location = safeString(vars["location"]);
+    var aml_workspace = safeString(vars["aml_workspace"]);
+
+    var terraform_version = safeString(vars["terraform_version"]);
+    var terraform_workingdir = safeString(vars["terraform_workingdir"]);
+    var terraform_st_location = safeString(vars["terraform_st_location"]);
+    var terraform_st_resource_group = safeString(vars["terraform_st_resource_group"]);
+    var terraform_st_storage_account = safeString(vars["terraform_st_storage_account"]);
+    var terraform_st_container_name = safeString(vars["terraform_st_container_name"]);
+    var terraform_st_key = safeString(vars["terraform_st_key"]);
 
     if(checkGenerateEntity(terraform_st_location)){
       terraform_st_location = location;
@@ -50,7 +61,6 @@ try {
       terraform_st_storage_account = "st"+namespace+postfix+environment+"tf";
     }
 
-    
     const safe_namespace = namespace.replace(/-/g, '');
     const safe_postfix = postfix.replace(/-/g, '');
     const safe_environment = environment.replace(/-/g, '');
@@ -85,20 +95,9 @@ try {
     core.setOutput("terraform_st_storage_account", terraform_st_storage_account);
     core.setOutput("terraform_st_container_name", terraform_st_container_name);
     core.setOutput("terraform_st_key", terraform_st_key);
-
-    // Model registry config (optional)
-    var model_registry_name = configYaml["variables"]["model_registry_name"];
-    core.setOutput("model_registry_name", model_registry_name ? String(model_registry_name) : "");
+    core.setOutput("model_registry_name", safeString(vars["model_registry_name"]));
   });
-  
+
 } catch (error) {
   core.setFailed(error.message);
-}
-function checkGenerateEntity(entity){
-    var result = false;
-    var entityStr = String(entity);
-    if (entityStr.includes("$")){
-        result = true;
-    }
-    return result;
 }

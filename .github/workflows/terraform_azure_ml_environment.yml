@@ -1,4 +1,4 @@
-name: terraform-azureml
+name: terraform-azure-ml-environment
 
 on:
   workflow_call:
@@ -18,7 +18,7 @@ on:
       terraform_directory:
         description: "Path to the Terraform project inside the templates repository"
         required: false
-        default: ml-mlops-templates/terraform/azureml
+        default: ml-mlops-templates/terraform/ml-environment
         type: string
       apply:
         description: "Whether to run terraform apply (plan always runs)"

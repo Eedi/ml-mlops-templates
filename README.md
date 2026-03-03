@@ -10,7 +10,7 @@
 - Push the tag separately (`git push origin v1.0.0`) so consumers can pin workflows to the exact version.
 - Update release notes in GitHub (or a CHANGELOG) when the tag publishes, and notify downstream repos to bump their `uses: ...@vX.Y.Z` and `templates_repo_ref` pins.
 
-> **Why lightweight tags?** GitHub Actions has a [known limitation](https://github.com/orgs/community/discussions/48693) where nested reusable workflows with relative paths (e.g., `terraform_azureml.yml` calling `read-yaml.yml`) fail to resolve when referenced via annotated tags. Lightweight tags work correctly.
+> **Why lightweight tags?** GitHub Actions has a [known limitation](https://github.com/orgs/community/discussions/48693) where nested reusable workflows with relative paths (e.g., `terraform_azure_ml_environment.yml` calling `read-yaml.yml`) fail to resolve when referenced via annotated tags. Lightweight tags work correctly.
 
 ## Building an image
 Use `build.yml` in a github workflow in the ML project, like:  
@@ -137,12 +137,12 @@ Assuming the shadow deployment config points at <proj>.azurecr.io/envname:latest
 
 ## Terraform infrastructure
 
-The reusable `terraform_azureml.yml` workflow handles planning and applying Terraform changes:
+The reusable `terraform_azure_ml_environment.yml` workflow handles planning and applying Terraform changes:
 
 ```
 jobs:
   terraform-dev:
-    uses: Eedi/ml-mlops-templates/.github/workflows/terraform_azureml.yml@vX.Y.Z
+    uses: Eedi/ml-mlops-templates/.github/workflows/terraform_azure_ml_environment.yml@vX.Y.Z
     with:
       environment: anet-dev
       environment_config_file: config-infra-anet-dev.yml
@@ -153,7 +153,7 @@ Inputs:
 
 - `environment` – GitHub environment that should receive the deployment.
 - `environment_config_file` – Path to the environment YAML consumed by `read-yaml.yml`.
-- `terraform_directory` – Path (relative to the workspace) where the Terraform code lives; defaults to `ml-mlops-templates/terraform/azureml`.
+- `terraform_directory` – Path (relative to the workspace) where the Terraform code lives; defaults to `ml-mlops-templates/terraform/ml-environment`.
 - `apply` – Set to `true` to run `terraform apply` after a successful plan.
 - `import_script` – Optional helper (defaults to `../../scripts/terraform/import_unmanaged_resources.sh` relative to the Terraform directory) run before `terraform apply`. Override with a path relative to the Terraform working directory if your project needs extra imports.
 - `repo_name` – Derived automatically from `github.event.repository.name` and injected via `TF_VAR_repo_name` for tagging.
@@ -181,7 +181,7 @@ jobs:
 
 Inputs:
 
-- `environment`, `environment_config_file` – Same contract as `build.yml` / `terraform_azureml.yml`.
+- `environment`, `environment_config_file` – Same contract as `build.yml` / `terraform_azure_ml_environment.yml`.
 - `pipeline_config_path` – Path inside the calling repository to the rendered pipeline YAML.
 - `run_build` – Rebuild the training environment before submission. When `true`, `ml_env_name`, `ml_env_description`, `target_layer`, `tags`, and `maximise_disk_space` are forwarded to `build.yml`.
 
