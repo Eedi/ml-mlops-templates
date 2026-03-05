@@ -12,8 +12,3 @@ output "acr_id" {
   value       = azurerm_container_registry.registry_acr.id
   description = "Resource ID of the backing container registry"
 }
-
-output "storage_account_id" {
-  value       = azurerm_storage_account.registry_storage.id
-  description = "Resource ID of the backing storage account"
-}
