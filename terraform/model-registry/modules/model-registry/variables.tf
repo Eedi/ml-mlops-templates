@@ -26,6 +26,6 @@ variable "postfix" {
 
 variable "acr_sku" {
   type        = string
-  default     = "Standard"
+  default     = "Premium"
   description = "SKU for the backing container registry"
 }
