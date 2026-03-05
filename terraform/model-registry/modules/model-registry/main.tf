@@ -23,19 +23,6 @@ resource "azurerm_container_registry" "registry_acr" {
   tags = var.tags
 }
 
-# Backing storage account for the ML model registry
-resource "azurerm_storage_account" "registry_storage" {
-  name                     = "st${local.safe_prefix}${local.safe_postfix}"
-  resource_group_name      = var.rg_name
-  location                 = var.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  account_kind             = "StorageV2"
-  is_hns_enabled           = false
-
-  tags = var.tags
-}
-
 # Azure ML Model Registry (via AzAPI since azurerm does not support this resource)
 resource "azapi_resource" "ml_registry" {
   type      = "Microsoft.MachineLearningServices/registries@2024-10-01"
@@ -59,20 +46,14 @@ resource "azapi_resource" "ml_registry" {
               systemCreatedAcrAccount = {
                 acrAccountName = azurerm_container_registry.registry_acr.name
                 acrAccountSku  = var.acr_sku
-                armResourceId = {
-                  resourceId = azurerm_container_registry.registry_acr.id
-                }
               }
             }
           ]
           storageAccountDetails = [
             {
               systemCreatedStorageAccount = {
-                armResourceId = {
-                  resourceId = azurerm_storage_account.registry_storage.id
-                }
                 storageAccountHnsEnabled = false
-                storageAccountName       = azurerm_storage_account.registry_storage.name
+                storageAccountName       = "st${local.safe_prefix}${local.safe_postfix}"
                 storageAccountType       = "Standard_LRS"
               }
             }
