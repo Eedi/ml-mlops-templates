@@ -64,8 +64,8 @@ fi
 
 ## CREATE RUN ##
 echo "📊 Creating load test run"
-git_commit_hash=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-test_run_id="commit-$git_commit_hash"
+git_commit_hash=$(git rev-parse --short=8 HEAD 2>/dev/null || echo "unknown")
+test_run_id="commit-$git_commit_hash-$load_test_name"
 
 az load test-run create \
     --name "$load_test_resource" \
