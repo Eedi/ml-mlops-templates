@@ -82,6 +82,8 @@ if [ "$deployment_status" = "Succeeded" ]; then
 else
   if [ -n "$deployment_status" ]; then
     echo "⚠️ Deployment exists but is not in 'Succeeded' state. Deleting it."
+    echo "🔀 Zeroing traffic before delete"
+    az ml online-endpoint update --name "$endpoint_name" --traffic "$deployment_name=0" || true
     az ml online-deployment delete --name "$deployment_name" --endpoint "$endpoint_name" --yes
   fi
 
