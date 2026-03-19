@@ -61,6 +61,24 @@ deployment_status=$(az ml online-deployment show \
 echo "ℹ️ Deployment provisioning state: ${deployment_status:-<not found>}"
 
 if [ "$deployment_status" = "Succeeded" ]; then
+  # instance_type is immutable on update — must delete+recreate if changed
+  live_instance_type=$(az ml online-deployment show \
+    --name "$deployment_name" \
+    --endpoint "$endpoint_name" \
+    --query "instance_type" \
+    -o tsv 2>/dev/null | sed 's/[[:space:]]//g' || true)
+  desired_instance_type=$(yq eval '.instance_type' "$deployment_config" | sed 's/[[:space:]]//g')
+
+  if [ -n "$desired_instance_type" ] && [ "$live_instance_type" != "$desired_instance_type" ]; then
+    echo "⚠️ instance_type changed ($live_instance_type → $desired_instance_type). Deleting deployment to recreate."
+    echo "🔀 Zeroing traffic before delete"
+    az ml online-endpoint update --name "$endpoint_name" --traffic "$deployment_name=0" || true
+    az ml online-deployment delete --name "$deployment_name" --endpoint "$endpoint_name" --yes
+    deployment_status=""
+  fi
+fi
+
+if [ "$deployment_status" = "Succeeded" ]; then
   echo "✅ Updating existing deployment: $deployment_name"
 
   # Copy base config
@@ -76,7 +94,6 @@ if [ "$deployment_status" = "Succeeded" ]; then
     .environment_variables.LOGGING_MODE = \"remote\" |
     .environment_variables.AZURE_STORAGE_ACCOUNT_NAME = \"$storage_account\"
   " -i "$tmp_yaml"
-
 
   az ml online-deployment update -f "$tmp_yaml" --name "$deployment_name" --endpoint-name "$endpoint_name"
 else
