@@ -3,7 +3,7 @@
 set -e
 
 # Read parameters
-while getopts "w:r:e:n:c:t:s:" flag
+while getopts "w:r:e:n:c:t:s:q:" flag
 do
   case "${flag}" in
     w) aml_workspace=${OPTARG};;
@@ -13,8 +13,12 @@ do
     c) deployment_config=${OPTARG};;
     t) traffic_percentage=${OPTARG};;
     s) storage_account=${OPTARG};;
+    q) enable_queue_logging=${OPTARG};;
   esac
 done
+
+# Default to enabled for backwards compatibility
+enable_queue_logging="${enable_queue_logging:-true}"
 
 
 
@@ -31,24 +35,31 @@ queue_id="${storage_account_id}/queueServices/default/queues/${queue_name}"
 staging_container_name="blob-$queue_name"
 container_id=$storage_account_id/blobServices/default/containers/$staging_container_name
 
-echo "🔍 Ensuring log storage resources exist..."
-echo "Creating queue"
-az storage queue create --name $queue_name --account-name $storage_account --auth-mode login
-echo "Assigning Storage Queue Data Contributor role to endpoint identity"
-az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Queue Data Contributor" --scope $queue_id
-echo "Creating blob container"
-az storage container create --name $staging_container_name --account-name $storage_account --auth-mode login
-echo "Assigning Storage Blob Data Contributor role to endpoint identity"
-az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope $container_id
+if [ "$enable_queue_logging" = "true" ]; then
+  echo "🔍 Ensuring log storage resources exist..."
+  echo "Creating queue"
+  az storage queue create --name $queue_name --account-name $storage_account --auth-mode login
+  echo "Assigning Storage Queue Data Contributor role to endpoint identity"
+  az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Queue Data Contributor" --scope $queue_id
+  echo "Creating blob container"
+  az storage container create --name $staging_container_name --account-name $storage_account --auth-mode login
+  echo "Assigning Storage Blob Data Contributor role to endpoint identity"
+  az role assignment create --assignee-object-id $endpoint_identity --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope $container_id
 
-# Define environment variables for deployment
-deployment_env_vars="\
+  deployment_env_vars="\
 --set environment_variables.TRAFFIC_TYPE=$traffic_type \
 --set environment_variables.ENDPOINT_NAME=$endpoint_name \
 --set environment_variables.QUEUE_NAME=$queue_name \
 --set environment_variables.STAGING_CONTAINER_NAME=$staging_container_name \
 --set environment_variables.LOGGING_MODE=remote \
 --set environment_variables.AZURE_STORAGE_ACCOUNT_NAME=$storage_account"
+else
+  echo "ℹ️ Queue logging disabled — skipping log storage setup"
+  deployment_env_vars="\
+--set environment_variables.TRAFFIC_TYPE=$traffic_type \
+--set environment_variables.ENDPOINT_NAME=$endpoint_name \
+--set environment_variables.LOGGING_MODE=disabled"
+fi
 
 
 echo "🔍 Checking if deployment exists..."
@@ -86,14 +97,22 @@ if [ "$deployment_status" = "Succeeded" ]; then
   cp "$deployment_config" "$tmp_yaml"
 
   # Append or replace environment variables in YAML
-  yq eval "
-    .environment_variables.TRAFFIC_TYPE = \"$traffic_type\" |
-    .environment_variables.ENDPOINT_NAME = \"$endpoint_name\" |
-    .environment_variables.QUEUE_NAME = \"$queue_name\" |
-    .environment_variables.STAGING_CONTAINER_NAME = \"$staging_container_name\" |
-    .environment_variables.LOGGING_MODE = \"remote\" |
-    .environment_variables.AZURE_STORAGE_ACCOUNT_NAME = \"$storage_account\"
-  " -i "$tmp_yaml"
+  if [ "$enable_queue_logging" = "true" ]; then
+    yq eval "
+      .environment_variables.TRAFFIC_TYPE = \"$traffic_type\" |
+      .environment_variables.ENDPOINT_NAME = \"$endpoint_name\" |
+      .environment_variables.QUEUE_NAME = \"$queue_name\" |
+      .environment_variables.STAGING_CONTAINER_NAME = \"$staging_container_name\" |
+      .environment_variables.LOGGING_MODE = \"remote\" |
+      .environment_variables.AZURE_STORAGE_ACCOUNT_NAME = \"$storage_account\"
+    " -i "$tmp_yaml"
+  else
+    yq eval "
+      .environment_variables.TRAFFIC_TYPE = \"$traffic_type\" |
+      .environment_variables.ENDPOINT_NAME = \"$endpoint_name\" |
+      .environment_variables.LOGGING_MODE = \"disabled\"
+    " -i "$tmp_yaml"
+  fi
 
   az ml online-deployment update -f "$tmp_yaml" --name "$deployment_name" --endpoint-name "$endpoint_name"
 else

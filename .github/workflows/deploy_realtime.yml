@@ -79,6 +79,11 @@ on:
         required: false
         default: false
         type: boolean
+      enable_queue_logging:
+        description: "Enable Azure Storage Queue request/response logging"
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   get-config:
@@ -178,7 +183,8 @@ jobs:
             -w ${{ needs.get-config.outputs.aml_workspace }} \
             -r ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }} \
             -t ${{ inputs.blue_traffic_percentage }} \
-            -s ${{ needs.get-config.outputs.storage_account }}
+            -s ${{ needs.get-config.outputs.storage_account }} \
+            -q ${{ inputs.enable_queue_logging }}
       - name: Green deployment
         if: inputs.deploy_green
         run: |
@@ -190,7 +196,8 @@ jobs:
             -w ${{ needs.get-config.outputs.aml_workspace }} \
             -r ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }} \
             -t ${{ inputs.green_traffic_percentage }} \
-            -s ${{ needs.get-config.outputs.storage_account }}
+            -s ${{ needs.get-config.outputs.storage_account }} \
+            -q ${{ inputs.enable_queue_logging }}
       - name: Route traffic
         run: ml-mlops-templates/.github/scripts/route_traffic.sh
       - name: Setup alerts
