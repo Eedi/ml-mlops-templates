@@ -77,6 +77,9 @@ on:
       terraform_st_key:
         description: "Terraform State Key"
         value: ${{ jobs.read-yaml.outputs.terraform_st_key }}
+      model_registry_name:
+        description: "The shared model registry name"
+        value: ${{ jobs.read-yaml.outputs.model_registry_name }}
 jobs:
   read-yaml:
     runs-on: ubuntu-latest
@@ -103,6 +106,7 @@ jobs:
       terraform_st_storage_account: ${{  steps.read_action_js.outputs.terraform_st_storage_account }}
       terraform_st_container_name: ${{  steps.read_action_js.outputs.terraform_st_container_name }}
       terraform_st_key: ${{  steps.read_action_js.outputs.terraform_st_key }}
+      model_registry_name: ${{  steps.read_action_js.outputs.model_registry_name }}
     steps:
       - name: Checkout caller repository
         uses: actions/checkout@v4
