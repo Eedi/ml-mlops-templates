@@ -91,7 +91,7 @@ jobs:
         shell: bash
     steps:
     - name: azure-login
-      uses: azure/login@v1
+      uses: azure/login@v3
       with:
         creds: ${{ env.AZURE_CREDENTIALS }}
         # environment: 'TBD' - default to azurecloud
@@ -146,7 +146,7 @@ jobs:
         shell: bash
     steps:
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2 
     - name: Terraform Init

@@ -142,7 +142,7 @@ jobs:
       envname: ${{ inputs.environment }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -152,7 +152,7 @@ jobs:
           echo "Checked out ref: $(git rev-parse --abbrev-ref HEAD)"
           git log -1
       - name: Check out scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -162,7 +162,7 @@ jobs:
         run: |
           ml-mlops-templates/.github/scripts/blue_green_logic_checks.sh
       - name: Az CLI Login
-        uses: azure/login@v1
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
@@ -237,7 +237,7 @@ jobs:
       envname: ${{ inputs.environment }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -247,7 +247,7 @@ jobs:
           echo "Checked out ref: $(git rev-parse --abbrev-ref HEAD)"
           git log -1
       - name: Check out scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -257,7 +257,7 @@ jobs:
         run: |
           ml-mlops-templates/.github/scripts/blue_green_logic_checks.sh
       - name: Az CLI Login
-        uses: azure/login@v1
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}

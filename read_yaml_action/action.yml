@@ -53,5 +53,5 @@ outputs:
   model_registry_name:
     description: 'The shared model registry name'
 runs:
-  using: 'node16'
+  using: 'node24'
   main: 'index.js'

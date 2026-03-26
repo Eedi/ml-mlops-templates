@@ -54,13 +54,13 @@ jobs:
       TF_VAR_repo_name: ${{ github.event.repository.name || github.repository }}
     steps:
       - name: Checkout project repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository }}
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Check out templates repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -81,7 +81,7 @@ jobs:
       - name: Terraform Validate
         run: terraform validate -no-color
       - name: Az CLI Login
-        uses: azure/login@v1
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
@@ -120,13 +120,13 @@ jobs:
       ARM_USE_AZUREAD: true
     steps:
       - name: Checkout project repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository }}
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Check out templates repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -143,7 +143,7 @@ jobs:
             -backend-config="storage_account_name=${{ secrets.ARM_BACKEND_STORAGE_ACCOUNT_NAME }}" \
             -backend-config="container_name=${{ secrets.ARM_BACKEND_CONTAINER_NAME }}"
       - name: Az CLI Login
-        uses: azure/login@v1
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}

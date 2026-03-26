@@ -92,14 +92,14 @@ jobs:
       pipeline_config_path: ${{ inputs.pipeline_config_path }}
     steps:
       - name: Checkout project repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository }}
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Check out templates repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -107,7 +107,7 @@ jobs:
           ref: ${{ inputs.templates_repo_ref }}
 
       - name: Azure login
-        uses: azure/login@v1
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
@@ -131,14 +131,14 @@ jobs:
       pipeline_config_path: ${{ inputs.pipeline_config_path }}
     steps:
       - name: Checkout project repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository }}
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Check out templates repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -146,7 +146,7 @@ jobs:
           ref: ${{ inputs.templates_repo_ref }}
 
       - name: Azure login
-        uses: azure/login@v1
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}

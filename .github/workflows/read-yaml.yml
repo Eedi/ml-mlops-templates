@@ -109,9 +109,9 @@ jobs:
       model_registry_name: ${{  steps.read_action_js.outputs.model_registry_name }}
     steps:
       - name: Checkout caller repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Checkout templates repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: Eedi/ml-mlops-templates
           token: ${{ secrets.GITHUB_TOKEN }}
