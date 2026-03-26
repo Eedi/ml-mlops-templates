@@ -3,7 +3,7 @@
 set -e
 
 # Read parameters
-while getopts "w:r:e:n:c:t:s:q:" flag
+while getopts "w:r:e:n:c:t:s:q:b:" flag
 do
   case "${flag}" in
     w) aml_workspace=${OPTARG};;
@@ -14,6 +14,7 @@ do
     t) traffic_percentage=${OPTARG};;
     s) storage_account=${OPTARG};;
     q) enable_queue_logging=${OPTARG};;
+    b) build_sha=${OPTARG};;
   esac
 done
 
@@ -52,13 +53,15 @@ if [ "$enable_queue_logging" = "true" ]; then
 --set environment_variables.QUEUE_NAME=$queue_name \
 --set environment_variables.STAGING_CONTAINER_NAME=$staging_container_name \
 --set environment_variables.LOGGING_MODE=remote \
---set environment_variables.AZURE_STORAGE_ACCOUNT_NAME=$storage_account"
+--set environment_variables.AZURE_STORAGE_ACCOUNT_NAME=$storage_account \
+${build_sha:+--set environment_variables.BUILD_SHA=$build_sha}"
 else
   echo "ℹ️ Queue logging disabled — skipping log storage setup"
   deployment_env_vars="\
 --set environment_variables.TRAFFIC_TYPE=$traffic_type \
 --set environment_variables.ENDPOINT_NAME=$endpoint_name \
---set environment_variables.LOGGING_MODE=disabled"
+--set environment_variables.LOGGING_MODE=disabled \
+${build_sha:+--set environment_variables.BUILD_SHA=$build_sha}"
 fi
 
 
@@ -104,13 +107,15 @@ if [ "$deployment_status" = "Succeeded" ]; then
       .environment_variables.QUEUE_NAME = \"$queue_name\" |
       .environment_variables.STAGING_CONTAINER_NAME = \"$staging_container_name\" |
       .environment_variables.LOGGING_MODE = \"remote\" |
-      .environment_variables.AZURE_STORAGE_ACCOUNT_NAME = \"$storage_account\"
+      .environment_variables.AZURE_STORAGE_ACCOUNT_NAME = \"$storage_account\" |
+      .environment_variables.BUILD_SHA = \"${build_sha:-}\"
     " -i "$tmp_yaml"
   else
     yq eval "
       .environment_variables.TRAFFIC_TYPE = \"$traffic_type\" |
       .environment_variables.ENDPOINT_NAME = \"$endpoint_name\" |
-      .environment_variables.LOGGING_MODE = \"disabled\"
+      .environment_variables.LOGGING_MODE = \"disabled\" |
+      .environment_variables.BUILD_SHA = \"${build_sha:-}\"
     " -i "$tmp_yaml"
   fi
 

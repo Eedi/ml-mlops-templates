@@ -184,7 +184,8 @@ jobs:
             -r ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }} \
             -t ${{ inputs.blue_traffic_percentage }} \
             -s ${{ needs.get-config.outputs.storage_account }} \
-            -q ${{ inputs.enable_queue_logging }}
+            -q ${{ inputs.enable_queue_logging }} \
+            -b ${{ github.sha }}
       - name: Green deployment
         if: inputs.deploy_green
         run: |
@@ -197,7 +198,8 @@ jobs:
             -r ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }} \
             -t ${{ inputs.green_traffic_percentage }} \
             -s ${{ needs.get-config.outputs.storage_account }} \
-            -q ${{ inputs.enable_queue_logging }}
+            -q ${{ inputs.enable_queue_logging }} \
+            -b ${{ github.sha }}
       - name: Route traffic
         run: ml-mlops-templates/.github/scripts/route_traffic.sh
       - name: Setup alerts
