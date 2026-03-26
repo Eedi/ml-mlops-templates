@@ -1,0 +1,65 @@
+name: promote-model
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "GitHub environment to target (e.g. anet-dev)"
+        required: true
+        type: string
+      environment_config_file:
+        description: "Path to the infra config YAML inside the calling repository"
+        required: true
+        type: string
+      templates_repo_ref:
+        description: "Git ref of ml-mlops-templates to check out"
+        required: true
+        type: string
+      model_name:
+        description: "Name of the model to promote from the workspace"
+        required: true
+        type: string
+      model_version:
+        description: "Version of the model to promote"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  get-config:
+    uses: ./.github/workflows/read-yaml.yml
+    with:
+      file_name: ${{ inputs.environment_config_file }}
+      templates_repo_ref: ${{ inputs.templates_repo_ref }}
+
+  promote:
+    needs: get-config
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Az CLI Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: Install Azure ML CLI extension
+        run: az extension add -n ml -y
+
+      - name: Promote model to shared registry
+        run: |
+          az ml model share \
+            --name ${{ inputs.model_name }} \
+            --version ${{ inputs.model_version }} \
+            --registry-name ${{ needs.get-config.outputs.model_registry_name }} \
+            --share-with-name ${{ inputs.model_name }} \
+            --share-with-version ${{ inputs.model_version }} \
+            --resource-group ${{ secrets.PROJECT_RESOURCE_GROUP_NAME }} \
+            --workspace-name ${{ needs.get-config.outputs.aml_workspace }}
