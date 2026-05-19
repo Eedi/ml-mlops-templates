@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "slackWebhookUrl": {
+      "type": "SecureString"
+    }
+  },
+  "triggers": {
+    "When_Azure_alert_received": {
+      "type": "Request",
+      "kind": "Http",
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "schemaId": { "type": "string" },
+            "data": {
+              "type": "object",
+              "properties": {
+                "essentials": { "type": "object" },
+                "alertContext": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "Post_to_Slack": {
+      "type": "Http",
+      "runAfter": {},
+      "runtimeConfiguration": {
+        "secureData": {
+          "properties": ["inputs", "outputs"]
+        }
+      },
+      "inputs": {
+        "method": "POST",
+        "uri": "@parameters('slackWebhookUrl')",
+        "body": {
+          "text": "@{concat(':rotating_light: *', triggerBody()?['data']?['essentials']?['alertRule'], '* (', triggerBody()?['data']?['essentials']?['severity'], ')\nFired: ', triggerBody()?['data']?['essentials']?['firedDateTime'], '\nDescription: ', coalesce(triggerBody()?['data']?['essentials']?['description'], 'n/a'))}"
+        }
+      }
+    }
+  },
+  "outputs": {}
+}
