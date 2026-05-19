@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "= 3.116.0"
     }
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.0"
+    }
   }
   backend "azurerm" {
     key              = "terraform.tfstate"
@@ -16,6 +20,10 @@ provider "azurerm" {
   use_oidc                   = true
   skip_provider_registration = true
   features {}
+}
+
+provider "azapi" {
+  use_oidc = true
 }
 
 data "azurerm_client_config" "current" {}
