@@ -3,7 +3,7 @@ name: App Service - Deploy
 # Reusable workflow: point an Azure App Service (containers) at an image tag in
 # ACR, using the OIDC federated service principal. By default the App Service
 # pulls from ACR with its own managed identity (no registry password anywhere);
-# set use_managed_identity: false to fall back to ACR admin creds.
+# set use_managed_identity: false to fall back to ACR admin creds. 
 #
 # Call it from a project repo with:
 #   uses: Eedi/ml-mlops-templates/.github/workflows/appservice_deploy.yml@vX.Y.Z
