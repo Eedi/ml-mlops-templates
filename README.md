@@ -3,6 +3,68 @@
 > Always reference a tagged release (or commit SHA) when invoking these reusable workflows so the scripts and workflows stay in lock-step with the version you audited.
 
 
+## App Service container apps (non-AML)
+
+For plain containerised web apps deployed to **Azure App Service** (not Azure ML
+endpoints), use the two reusable workflows below. They authenticate with the
+OIDC federated service principal (`ARM_CLIENT_ID` / `ARM_TENANT_ID` /
+`ARM_SUBSCRIPTION_ID`, with `id-token: write`) and do not require AML config
+files or `read-yaml`.
+
+### Build & push an image — `appservice_build.yml`
+
+```yaml
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  build-dev:
+    uses: Eedi/ml-mlops-templates/.github/workflows/appservice_build.yml@vX.Y.Z
+    with:
+      app_label: my-app          # label in Slack messages
+      image_repository: my-app   # ACR repository
+      image_tag_prefix: dev      # -> dev_latest and dev_buildid_<run>
+      dockerfile_path: Dockerfile
+      build_target: app          # optional multi-stage target; omit if none
+    secrets: inherit
+```
+
+Logs in to ACR with `az acr login` (the SP needs `AcrPush`), builds, pushes
+`<prefix>_latest` and `<prefix>_buildid_<run>`, and notifies Slack
+(`SLACK_BUILDS_WEBHOOK_URL`, optional). Outputs `image_tag` and `image`.
+
+### Deploy an image — `appservice_deploy.yml`
+
+```yaml
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  deploy-dev:
+    uses: Eedi/ml-mlops-templates/.github/workflows/appservice_deploy.yml@vX.Y.Z
+    with:
+      app_label: my-app
+      webapp_name: my-app-service        # App Service name
+      resource_group: my-rg
+      image_repository: my-app
+      image_tag: dev_latest
+      environment: development           # GitHub environment for approvals
+      websites_port: '8000'              # container listen port
+      use_managed_identity: true         # ACR pull via web app MI (recommended)
+    secrets: inherit
+```
+
+Points the App Service at the image, sets `WEBSITES_PORT`, restarts, and
+notifies Slack (`SLACK_DEPLOYS_WEBHOOK_URL`, optional). With
+`use_managed_identity: true` (default) the **web app must have a managed
+identity granted `AcrPull` on the registry**; the workflow then enables
+`acrUseManagedIdentityCreds` and no registry password is used. Set it to
+`false` to fall back to `ACR_USERNAME` / `ACR_PASSWORD`.
+
+Required secrets (repo or org level, passed via `secrets: inherit`):
+`ARM_CLIENT_ID`, `ARM_TENANT_ID`, `ARM_SUBSCRIPTION_ID`, `ACR_LOGIN_SERVER`,
+plus the Slack webhooks and (if not using MI) `ACR_USERNAME` / `ACR_PASSWORD`.
+
 ## Versioning & Release Workflow
 - Work from `main`; land changes via PRs so CI runs on the merge commit.
 - Once the changes you want to release are on `main`, push the branch first (`git push origin main`).
