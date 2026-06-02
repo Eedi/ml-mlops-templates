@@ -1,0 +1,165 @@
+name: App Service - Build and Push
+
+# Reusable workflow: build a container image from a caller repo's Dockerfile,
+# log in to ACR with the OIDC federated service principal (no stored password),
+# push prefixed tags, and notify Slack. Generic for any App Service container app.
+#
+# Call it from a project repo with:
+#   uses: Eedi/ml-mlops-templates/.github/workflows/appservice_build.yml@vX.Y.Z
+#   secrets: inherit
+#   permissions:
+#     id-token: write
+#     contents: read
+
+on:
+  workflow_call:
+    inputs:
+      app_label:
+        description: 'Human-friendly app name used in Slack messages (e.g. "ml-atoms").'
+        required: true
+        type: string
+      image_repository:
+        description: 'ACR repository name to push to (e.g. "ml-atoms").'
+        required: true
+        type: string
+      image_tag_prefix:
+        description: 'Tag prefix; produces <prefix>_latest and <prefix>_buildid_<run> (e.g. "dev").'
+        required: false
+        type: string
+        default: 'dev'
+      dockerfile_path:
+        description: 'Path to the Dockerfile in the caller repo.'
+        required: false
+        type: string
+        default: 'Dockerfile'
+      build_target:
+        description: 'Optional Docker multi-stage target layer (e.g. "app"). Empty = no --target.'
+        required: false
+        type: string
+        default: ''
+      build_context:
+        description: 'Docker build context path.'
+        required: false
+        type: string
+        default: '.'
+      runs_on:
+        description: 'Runner label.'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+    secrets:
+      ARM_CLIENT_ID:
+        required: true
+      ARM_TENANT_ID:
+        required: true
+      ARM_SUBSCRIPTION_ID:
+        required: true
+      ACR_LOGIN_SERVER:
+        required: true
+      SLACK_BUILDS_WEBHOOK_URL:
+        required: false
+    outputs:
+      image_tag:
+        description: 'The unique build tag pushed (<prefix>_buildid_<run>).'
+        value: ${{ jobs.build.outputs.image_tag }}
+      image:
+        description: 'Full image reference of the unique build tag.'
+        value: ${{ jobs.build.outputs.image }}
+
+jobs:
+  build:
+    name: Build ${{ inputs.app_label }} image
+    runs-on: ${{ inputs.runs_on }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      SLACK_BUILDS_WEBHOOK_URL: ${{ secrets.SLACK_BUILDS_WEBHOOK_URL }}
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compute image tags
+        id: meta
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+        run: |
+          PREFIX="${{ inputs.image_tag_prefix }}"
+          REPO="${{ inputs.image_repository }}"
+          UNIQUE_TAG="${PREFIX}_buildid_${{ github.run_number }}"
+          LATEST_TAG="${PREFIX}_latest"
+          echo "unique_tag=$UNIQUE_TAG" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$UNIQUE_TAG" >> "$GITHUB_OUTPUT"
+          echo "image=${ACR_LOGIN_SERVER}/${REPO}:${UNIQUE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Az CLI Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: Log in to ACR
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+        run: |
+          ACR_NAME="${ACR_LOGIN_SERVER%%.*}"
+          az acr login --name "$ACR_NAME"
+
+      - name: Build image
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+        run: |
+          TARGET_ARG=""
+          if [ -n "${{ inputs.build_target }}" ]; then
+            TARGET_ARG="--target ${{ inputs.build_target }}"
+          fi
+          docker build \
+            -f "${{ inputs.dockerfile_path }}" \
+            $TARGET_ARG \
+            -t "${ACR_LOGIN_SERVER}/${{ inputs.image_repository }}:${{ steps.meta.outputs.latest_tag }}" \
+            -t "${ACR_LOGIN_SERVER}/${{ inputs.image_repository }}:${{ steps.meta.outputs.unique_tag }}" \
+            "${{ inputs.build_context }}"
+
+      - name: Push tags
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+        run: |
+          docker push "${ACR_LOGIN_SERVER}/${{ inputs.image_repository }}:${{ steps.meta.outputs.latest_tag }}"
+          docker push "${ACR_LOGIN_SERVER}/${{ inputs.image_repository }}:${{ steps.meta.outputs.unique_tag }}"
+
+      - name: Notify Slack - Success
+        if: success() && env.SLACK_BUILDS_WEBHOOK_URL != ''
+        run: |
+          PAYLOAD=$(cat <<EOF
+          {
+            "attachments": [
+              {
+                "color": "good",
+                "text": "✅ ${{ inputs.app_label }} - Build Succeeded\n> Branch: ${{ github.ref_name }}\n> Build: ${{ github.run_number }}\n> By: ${{ github.actor }}\n> Image: ${{ steps.meta.outputs.image }}"
+              }
+            ]
+          }
+          EOF
+          )
+          curl -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_BUILDS_WEBHOOK_URL"
+
+      - name: Notify Slack - Failure
+        if: failure() && env.SLACK_BUILDS_WEBHOOK_URL != ''
+        run: |
+          PAYLOAD=$(cat <<EOF
+          {
+            "attachments": [
+              {
+                "color": "danger",
+                "text": "❌ ${{ inputs.app_label }} - Build Failed\n> Branch: ${{ github.ref_name }}\n> Build: ${{ github.run_number }}\n> By: ${{ github.actor }}"
+              }
+            ]
+          }
+          EOF
+          )
+          curl -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_BUILDS_WEBHOOK_URL"
