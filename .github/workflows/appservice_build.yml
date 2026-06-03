@@ -140,7 +140,7 @@ jobs:
             "attachments": [
               {
                 "color": "good",
-                "text": "✅ ${{ inputs.app_label }} - Build Succeeded\n> Branch: ${{ github.ref_name }}\n> Build: ${{ github.run_number }}\n> By: ${{ github.actor }}\n> Image: ${{ steps.meta.outputs.image }}"
+                "text": "✅ ${{ inputs.app_label }} - Build Succeeded\n*Branch:* ${{ github.ref_name }}\n*Build:* ${{ github.run_number }}\n*Actor:* ${{ github.actor }}\n*Image:* ${{ steps.meta.outputs.image }}\n*Image Tag:* ${{ steps.meta.outputs.image_tag }}"
               }
             ]
           }
@@ -156,7 +156,7 @@ jobs:
             "attachments": [
               {
                 "color": "danger",
-                "text": "❌ ${{ inputs.app_label }} - Build Failed\n> Branch: ${{ github.ref_name }}\n> Build: ${{ github.run_number }}\n> By: ${{ github.actor }}"
+                "text": "❌ ${{ inputs.app_label }} - Build Failed\n*Branch:* ${{ github.ref_name }}\n*Build:* ${{ github.run_number }}\n*Actor:* ${{ github.actor }}\n*Image Tag:* ${{ steps.meta.outputs.image_tag }}"
               }
             ]
           }
