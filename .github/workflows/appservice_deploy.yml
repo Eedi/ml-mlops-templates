@@ -139,7 +139,7 @@ jobs:
             "attachments": [
               {
                 "color": "good",
-                "text": "🚀 ${{ inputs.app_label }} - Deployed\n> Environment: ${{ inputs.environment }}\n> App: ${{ inputs.webapp_name }}\n> Image: ${IMAGE}\n> Deployed by: ${{ github.actor }}\n> Status: ✅ Live"
+                "text": "🚀 ${{ inputs.app_label }} - Deployed\n*Environment:* ${{ inputs.environment }}\n*Azure App:* ${{ inputs.webapp_name }}\n*Image:* ${IMAGE}\n*Actor:* ${{ github.actor }}\n*Status:* ✅ Live"
               }
             ]
           }
@@ -155,7 +155,7 @@ jobs:
             "attachments": [
               {
                 "color": "danger",
-                "text": "❌ ${{ inputs.app_label }} - Deployment Failed\n> Environment: ${{ inputs.environment }}\n> App: ${{ inputs.webapp_name }}\n> Image: ${IMAGE}\n> Triggered by: ${{ github.actor }}\n> Status: ❌ Failed"
+                "text": "❌ ${{ inputs.app_label }} - Deployment Failed\n*Environment:* ${{ inputs.environment }}\n*Azure App:* ${{ inputs.webapp_name }}\n*Image:* ${IMAGE}\n*Actor:* ${{ github.actor }}\n*Status:* ❌ Failed"
               }
             ]
           }
