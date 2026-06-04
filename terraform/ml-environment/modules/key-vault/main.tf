@@ -37,5 +37,18 @@ resource "azurerm_key_vault" "kv" {
     ]
   }
 
-
+  # The inline access_policy blocks above are authoritative: by default every
+  # apply resets the vault's entire access-policy list to exactly what is
+  # declared here and DELETES anything else. Other identities legitimately get
+  # policies out-of-band — most importantly the AML workspace managed identity
+  # (managed by the separate azurerm_key_vault_access_policy.ml_workspace
+  # resource in the aml-workspace module) and any online-endpoint identities
+  # AML grants at deploy time. Without ignoring access_policy, re-applying an
+  # existing environment strips those policies and cuts off the workspace's
+  # access to its own key vault, breaking endpoint/portal key access.
+  # Ignore access_policy so the inline blocks only seed a greenfield create and
+  # drift on the policy list is left to the dedicated access-policy resources.
+  lifecycle {
+    ignore_changes = [access_policy]
+  }
 }
