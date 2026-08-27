@@ -42,6 +42,11 @@ on:
         required: false
         type: string
         default: '.'
+      build_args:
+        description: 'Optional Docker build arguments (e.g. "--build-arg GIT_SHA=123").'
+        required: false
+        type: string
+        default: ''
       runs_on:
         description: 'Runner label.'
         required: false
@@ -121,6 +126,7 @@ jobs:
           docker build \
             -f "${{ inputs.dockerfile_path }}" \
             $TARGET_ARG \
+            ${{ inputs.build_args }} \
             -t "${ACR_LOGIN_SERVER}/${{ inputs.image_repository }}:${{ steps.meta.outputs.latest_tag }}" \
             -t "${ACR_LOGIN_SERVER}/${{ inputs.image_repository }}:${{ steps.meta.outputs.unique_tag }}" \
             "${{ inputs.build_context }}"
