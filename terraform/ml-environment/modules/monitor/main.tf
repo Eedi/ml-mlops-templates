@@ -16,6 +16,10 @@ resource "azapi_resource" "slack_translator" {
   location  = var.location
   tags      = var.tags
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   body = {
     properties = {
       state      = "Enabled"
@@ -24,9 +28,18 @@ resource "azapi_resource" "slack_translator" {
         slackWebhookUrl = {
           value = var.slack_webhook_url
         }
+        logAnalyticsWorkspaceId = {
+          value = var.log_analytics_workspace_guid
+        }
       }
     }
   }
+}
+
+resource "azurerm_role_assignment" "slack_translator_log_reader" {
+  scope                = var.log_analytics_workspace_id
+  role_definition_name = "Log Analytics Reader"
+  principal_id         = azapi_resource.slack_translator.identity[0].principal_id
 }
 
 # Callback URL is itself a SAS-signed secret; export via

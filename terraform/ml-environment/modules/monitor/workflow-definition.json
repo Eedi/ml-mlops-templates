@@ -4,6 +4,9 @@
   "parameters": {
     "slackWebhookUrl": {
       "type": "SecureString"
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "String"
     }
   },
   "triggers": {
@@ -28,19 +31,70 @@
     }
   },
   "actions": {
-    "Post_to_Slack": {
-      "type": "Http",
+    "If_resolved": {
+      "type": "If",
       "runAfter": {},
-      "runtimeConfiguration": {
-        "secureData": {
-          "properties": ["inputs", "outputs"]
+      "expression": {
+        "and": [
+          {
+            "equals": ["@triggerBody()?['data']?['essentials']?['monitorCondition']", "Resolved"]
+          }
+        ]
+      },
+      "actions": {
+        "Post_resolved_to_Slack": {
+          "type": "Http",
+          "runAfter": {},
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": ["inputs", "outputs"]
+            }
+          },
+          "inputs": {
+            "method": "POST",
+            "uri": "@parameters('slackWebhookUrl')",
+            "body": {
+              "text": "@{concat(':white_check_mark: Resolved: *', triggerBody()?['data']?['essentials']?['alertRule'], '*')}"
+            }
+          }
         }
       },
-      "inputs": {
-        "method": "POST",
-        "uri": "@parameters('slackWebhookUrl')",
-        "body": {
-          "text": "@{concat(':rotating_light: *', triggerBody()?['data']?['essentials']?['alertRule'], '* (', triggerBody()?['data']?['essentials']?['severity'], ')\nFired: ', triggerBody()?['data']?['essentials']?['firedDateTime'], '\nDescription: ', coalesce(triggerBody()?['data']?['essentials']?['description'], 'n/a'))}"
+      "else": {
+        "actions": {
+          "Query_logs": {
+            "type": "Http",
+            "runAfter": {},
+            "inputs": {
+              "method": "POST",
+              "uri": "https://api.loganalytics.io/v1/workspaces/@{parameters('logAnalyticsWorkspaceId')}/query",
+              "authentication": {
+                "type": "ManagedServiceIdentity",
+                "audience": "https://api.loganalytics.io"
+              },
+              "body": {
+                "query": "AmlOnlineEndpointTrafficLog | where EndpointName == '@{triggerBody()?['data']?['customProperties']?['CustomKey1']}' and ResponseCode != '200' | summarize n = count() by ResponseCode, ModelStatusCode | extend Line = strcat(n, ' x ', ResponseCode, iff(ResponseCode == '424', strcat(' (model ', ModelStatusCode, ')'), '')) | summarize strcat_array(make_list(Line), '\\n')",
+                "timespan": "@{triggerBody()?['data']?['alertContext']?['condition']?['windowStartTime']}/@{triggerBody()?['data']?['alertContext']?['condition']?['windowEndTime']}"
+              }
+            }
+          },
+          "Post_to_Slack": {
+            "type": "Http",
+            "runAfter": {
+              "Query_logs": ["Succeeded", "Failed", "TimedOut"]
+            },
+            "runtimeConfiguration": {
+              "secureData": {
+                "properties": ["inputs", "outputs"]
+              }
+            },
+            "inputs": {
+              "method": "POST",
+              "uri": "@parameters('slackWebhookUrl')",
+              "body": {
+                "text": "@{concat(':rotating_light: *', triggerBody()?['data']?['essentials']?['alertRule'], '* (', triggerBody()?['data']?['essentials']?['severity'], ')\nFired: ', triggerBody()?['data']?['essentials']?['firedDateTime'], '\nDescription: ', coalesce(triggerBody()?['data']?['essentials']?['description'], 'n/a'), '\n', coalesce(body('Query_logs')?['tables']?[0]?['rows']?[0]?[0], 'Breakdown unavailable'))}"
+              }
+            }
+          }
         }
       }
     }

@@ -4,10 +4,11 @@
 # Setup Azure Monitor alerts for Azure ML endpoints
 #
 # This script sets up monitoring alerts for Azure ML endpoints.
-# It creates/updates an action group with Slack webhook integration and configures
-# two types of alerts:
-# 1. Application Insights metric alert for HTTP 4xx/5xx errors
-# 2. Log Analytics query alert for non-200 response codes
+# It looks up the existing action group (Slack integration) and creates/updates
+# three Log Analytics query alert rules:
+# 1. Critical (Sev 1): any 503, 502 or 424 (model 500) in 15m
+# 2. Capacity (Sev 2): any 429, 408 or 424 (model 504) in 15m
+# 3. Non-200 rate (Sev 3): more than 20% non-200 in 2h, with at least 3 requests
 #
 # Required environment variables:
 #   - slack_webhook_url: URL for Slack webhook notifications
@@ -17,10 +18,7 @@
 #   - aml_workspace: Azure ML workspace name
 #
 # Optional environment variables (with defaults):
-#   - severity: Alert severity (0=Critical, 1=Error, 2=Warning, 3=Informational)
 #   - check_frequency: How often to check (default: 5m)
-#   - window_size: Time window for evaluation (default: 15m)
-#   - error_threshold: Number of errors to trigger alert (default: 10)
 # =============================================================================
 
 # Exit on any error
@@ -79,57 +77,76 @@ echo "ℹ️ Action Group ID: $action_group_id"
 
 
 # =============================================================================
-# Create or update Log Analytics query alert rule
+# Create or update Log Analytics query alert rules
 # =============================================================================
 
 # Set default values for optional variables
-severity="${severity:-1}"
 check_frequency="${check_frequency:-5m}"
-window_size="${window_size:-15m}"
-error_threshold="${error_threshold:-10}"
 
+# Args: name, description, severity, window size, query name, query, condition
+create_or_update_alert() {
+    local log_alert_name="$1" description="$2" severity="$3" window_size="$4" query_name="$5" query="$6" condition="$7"
 
-echo "🚀 Creating Log Analytics query alert rule: Non-200 response codes"
+    echo "🚀 Creating Log Analytics query alert rule: $log_alert_name"
 
-log_alert_name="${endpoint_name}-non-200-alert"
+    # Delete existing alert if it exists
+    echo "🔍 Checking if Log Analytics alert rule exists..."
+    log_alert_status=$(az monitor scheduled-query show \
+        --name "$log_alert_name" \
+        --resource-group $resource_group \
+        --query "name" \
+        -o tsv 2>/dev/null || true)
 
-# Delete existing alert if it exists
-echo "🔍 Checking if Log Analytics alert rule exists..."
-log_alert_status=$(az monitor scheduled-query show \
-    --name "$log_alert_name" \
-    --resource-group $resource_group \
-    --query "name" \
-    -o tsv 2>/dev/null || true)
+    echo "ℹ️ Log Analytics alert rule status: ${log_alert_status:-<not found>}"
 
-echo "ℹ️ Log Analytics alert rule status: ${log_alert_status:-<not found>}"
+    if [ -n "$log_alert_status" ]; then
+        echo "ℹ️  Log Analytics alert rule already exists, updating it"
+        command="az monitor scheduled-query update"
+    else
+        echo "ℹ️  No existing Log Analytics alert rule found, proceeding with creation"
+        endpoint_id=$(az ml online-endpoint show -n $endpoint_name --query "id" -o tsv)
+        app_insights_id=$(az ml workspace show --query "application_insights" -o tsv)
+        log_analytics_workspace_id=$(az monitor app-insights component show --ids $app_insights_id --query "workspaceResourceId" -o tsv)
 
-if [ -n "$log_alert_status" ]; then
-    echo "ℹ️  Log Analytics alert rule already exists, updating it"
-    command="az monitor scheduled-query update"
-else
-    echo "ℹ️  No existing Log Analytics alert rule found, proceeding with creation"
-    endpoint_id=$(az ml online-endpoint show -n $endpoint_name --query "id" -o tsv)
-    app_insights_id=$(az ml workspace show --query "application_insights" -o tsv)
-    log_analytics_workspace_id=$(az monitor app-insights component show --ids $app_insights_id --query "workspaceResourceId" -o tsv)
+        # --scopes can only be set at creation time.
+        # The case where the endpoint name changes is not handled here.
+        command="az monitor scheduled-query create --scopes "$log_analytics_workspace_id""
+    fi
 
-    # --scopes can only be set at creation time. 
-    # The case where the endpoint name changes is not handled here.
-    command="az monitor scheduled-query create --scopes "$log_analytics_workspace_id""
-fi
+    $command \
+        --name "$log_alert_name" \
+        --resource-group $resource_group \
+        --description "$description" \
+        --severity $severity \
+        --evaluation-frequency $check_frequency \
+        --window-size $window_size \
+        --condition-query $query_name="$query" \
+        --condition "$condition" \
+        --action-groups $action_group_id \
+        --custom-properties "CustomKey1=$endpoint_name" \
+        --tags "team=data-science" "repo=ml-azua" "environment=$envname" \
+        --verbose
+}
 
-$command \
-    --name "$log_alert_name" \
-    --resource-group $resource_group \
-    --description "Alert on non-200 HTTP status codes from endpoint $endpoint_name" \
-    --severity $severity \
-    --evaluation-frequency $check_frequency \
-    --window-size $window_size \
-    --condition-query Non200Reponses="AmlOnlineEndpointTrafficLog | where ResponseCode != '200' and EndpointName == '$endpoint_name'" \
-    --condition "count 'Non200Reponses' > $error_threshold" \
-    --action-groups $action_group_id \
-    --custom-properties "CustomKey1=$endpoint_name" \
-    --tags "team=data-science" "repo=ml-azua" "environment=$envname" \
-    --verbose
+traffic="AmlOnlineEndpointTrafficLog | where EndpointName == '$endpoint_name'"
+
+create_or_update_alert "${endpoint_name}-critical-alert" \
+    "Alert on 503, 502 or 424 (model 500) responses from endpoint $endpoint_name" \
+    1 15m CriticalResponses \
+    "$traffic | where ResponseCode in ('503', '502') or (ResponseCode == '424' and ModelStatusCode == '500')" \
+    "count 'CriticalResponses' > 0"
+
+create_or_update_alert "${endpoint_name}-capacity-alert" \
+    "Alert on 429, 408 or 424 (model 504) responses from endpoint $endpoint_name" \
+    2 15m CapacityResponses \
+    "$traffic | where ResponseCode in ('429', '408') or (ResponseCode == '424' and ModelStatusCode == '504')" \
+    "count 'CapacityResponses' > 0"
+
+create_or_update_alert "${endpoint_name}-non-200-alert" \
+    "Alert on more than 20% non-200 responses (min 3 requests) from endpoint $endpoint_name" \
+    3 2h Non200Rate \
+    "$traffic | summarize Total = count(), Non200 = countif(ResponseCode != '200') | where Total >= 3 | extend FailureRate = todouble(Non200) / Total" \
+    "max FailureRate from 'Non200Rate' > 0.2"
 
 
 echo "✅ Alert setup complete!"
