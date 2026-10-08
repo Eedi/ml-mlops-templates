@@ -38,6 +38,9 @@ module "monitor" {
 
   slack_webhook_url = var.slack_webhook_url
 
+  log_analytics_workspace_id   = module.application_insights.log_analytics_workspace_id
+  log_analytics_workspace_guid = module.application_insights.log_analytics_workspace_guid
+
   tags = local.tags
 }
 

@@ -34,3 +34,13 @@ variable "env" {
   type        = string
   description = "Environment prefix"
 }
+
+variable "log_analytics_workspace_id" {
+  type        = string
+  description = "Resource ID of the Log Analytics workspace the Slack translator queries for alert breakdowns"
+}
+
+variable "log_analytics_workspace_guid" {
+  type        = string
+  description = "Workspace (customer) ID of the Log Analytics workspace, as used by the Log Analytics query API"
+}

@@ -37,5 +37,7 @@ resource "azurerm_key_vault" "kv" {
     ]
   }
 
-
+  lifecycle {
+    ignore_changes = [access_policy]
+  }
 }
